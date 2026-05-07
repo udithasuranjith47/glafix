@@ -253,6 +253,28 @@ export async function togglePostStatus(id: string, currentStatus: string): Promi
   await updateDoc(doc(db, POSTS_COLLECTION, id), update);
 }
 
+export interface AiStackEntry {
+  id: string;
+  rank: number;
+  category: string;
+  winner: string;
+  runnerUp: string;
+  verdict: string;
+  pros: string[];
+  href: string;
+  score: number;
+}
+
+export async function getAiStack(): Promise<AiStackEntry[]> {
+  const docSnap = await getDoc(doc(db, "config", "aistack"));
+  if (!docSnap.exists()) return [];
+  return (docSnap.data().entries ?? []) as AiStackEntry[];
+}
+
+export async function setAiStack(entries: AiStackEntry[]): Promise<void> {
+  await setDoc(doc(db, "config", "aistack"), { entries });
+}
+
 export async function getHomepageConfig(): Promise<{ topPicks: string[]; pillars: string[] }> {
   const docSnap = await getDoc(doc(db, "config", "homepage"));
   if (!docSnap.exists()) return { topPicks: [], pillars: [] };

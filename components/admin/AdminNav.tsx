@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PenSquare, BarChart2, Home, LogOut } from "lucide-react";
+import { LayoutDashboard, PenSquare, BarChart2, Home, Award, LogOut } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const navItems = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart2 },
   { label: "Homepage", href: "/admin/homepage", icon: Home },
+  { label: "AI Stack 2026", href: "/admin/aistack", icon: Award },
   { label: "New Post", href: "/admin/posts/new", icon: PenSquare },
 ];
 
