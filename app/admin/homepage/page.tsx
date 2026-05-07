@@ -18,14 +18,18 @@ export default function HomepagePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([getAllPosts(), getHomepageConfig()])
-      .then(([allPosts, config]) => {
-        setPosts(allPosts.filter((p) => p.status === "published"));
-        setTopPicks(config.topPicks);
-        setPillars(config.pillars);
-      })
-      .catch(() => toast.error("Failed to load data"))
-      .finally(() => setLoading(false));
+    Promise.allSettled([getAllPosts(), getHomepageConfig()]).then(([postsResult, configResult]) => {
+      if (postsResult.status === "fulfilled") {
+        setPosts(postsResult.value);
+      } else {
+        toast.error("Failed to load posts");
+      }
+      if (configResult.status === "fulfilled") {
+        setTopPicks(configResult.value.topPicks);
+        setPillars(configResult.value.pillars);
+      }
+      setLoading(false);
+    });
   }, []);
 
   function toggleSection(
@@ -113,7 +117,7 @@ export default function HomepagePage() {
 
       {posts.length === 0 && (
         <div className="text-center py-16 text-muted-foreground text-sm">
-          No published posts yet. Publish a post first, then come back to set up your homepage.
+          No posts yet. Create and publish a post first.
         </div>
       )}
     </div>
@@ -152,17 +156,22 @@ function Section({
 
       <div className="space-y-2">
         {posts.map((post) => {
+          const isPublished = post.status === "published";
           const isSelected = selected.includes(post.id);
           const order = selected.indexOf(post.id) + 1;
           return (
             <button
               key={post.id}
               type="button"
-              onClick={() => onToggle(post.id)}
+              disabled={!isPublished}
+              onClick={() => isPublished && onToggle(post.id)}
+              title={!isPublished ? "Publish this post first to add it to homepage sections" : undefined}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                isSelected
+                !isPublished
+                  ? "bg-muted/10 border-border/50 opacity-50 cursor-not-allowed"
+                  : isSelected
                   ? "bg-primary/10 border-primary/40 text-foreground"
-                  : "bg-card border-border text-muted-foreground hover:border-primary/20 hover:text-foreground"
+                  : "bg-card border-border text-muted-foreground hover:border-primary/20 hover:text-foreground cursor-pointer"
               }`}
             >
               <span
@@ -178,9 +187,16 @@ function Section({
                 <p className="text-sm font-medium truncate">{post.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{post.excerpt}</p>
               </div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary/60 border border-primary/20 rounded px-1.5 py-0.5 shrink-0">
-                {post.category}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                {!isPublished && (
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground border border-border rounded px-1.5 py-0.5">
+                    Draft
+                  </span>
+                )}
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-primary/60 border border-primary/20 rounded px-1.5 py-0.5">
+                  {post.category}
+                </span>
+              </div>
             </button>
           );
         })}
