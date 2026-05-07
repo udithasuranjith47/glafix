@@ -58,6 +58,28 @@ function docToPost(docSnap: DocumentSnapshot | QueryDocumentSnapshot): Post {
   };
 }
 
+export interface PostMeta {
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+}
+
+export async function getSearchablePosts(): Promise<PostMeta[]> {
+  const q = query(
+    collection(db, POSTS_COLLECTION),
+    where("status", "==", "published"),
+    orderBy("publishedAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({
+    slug: d.data().slug as string,
+    title: d.data().title as string,
+    excerpt: (d.data().excerpt as string) ?? "",
+    category: (d.data().category as string) ?? "",
+  }));
+}
+
 export async function getPublishedPosts(
   pageSize = 9,
   lastDoc?: QueryDocumentSnapshot
