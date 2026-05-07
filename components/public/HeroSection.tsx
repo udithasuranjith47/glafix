@@ -46,14 +46,12 @@ export function HeroSection({ featuredPost }: HeroSectionProps) {
             className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground mb-6 leading-[1.08] tracking-tight"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
-            <span className="text-primary uppercase tracking-wide">The AI Stack for One-Person Businesses.</span>{" "}
-            We test every tool so you can run lean, ship fast, and keep 100% of the upside.
+            Scale Your One-Person Business with AI.
           </h1>
 
           <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mb-10 leading-relaxed">
-            Independent reviews, real-world tests, and side-by-side comparisons of the AI,
-            automation, and no-code tools we use to replace entire teams. No fluff. No paid
-            placements we don&apos;t disclose.
+            Hand-tested AI and no-code tools to help you do more with less. Run lean, ship
+            faster, and keep the profits.
           </p>
 
           <div className="flex flex-wrap items-center gap-4">

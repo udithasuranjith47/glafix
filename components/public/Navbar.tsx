@@ -35,11 +35,8 @@ export function Navbar() {
         {/* ── Desktop row ────────────────────────────────────── */}
         <div className="hidden lg:flex items-center gap-6 h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <Logo size={28} className="group-hover:opacity-80 transition-opacity" />
-            <span className="text-lg font-bold tracking-tight" style={{ fontFamily: "var(--font-playfair)" }}>
-              Glafix
-            </span>
+          <Link href="/" className="flex items-center group shrink-0">
+            <Logo size={48} className="group-hover:opacity-80 transition-opacity rounded-lg" />
           </Link>
 
           {/* Search bar — centered, takes remaining space */}
@@ -67,11 +64,8 @@ export function Navbar() {
 
         {/* ── Mobile row ──────────────────────────────────────── */}
         <div className="lg:hidden flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo size={24} />
-            <span className="text-base font-bold" style={{ fontFamily: "var(--font-playfair)" }}>
-              Glafix
-            </span>
+          <Link href="/" className="flex items-center">
+            <Logo size={40} className="rounded-md" />
           </Link>
           <button
             className="text-muted-foreground hover:text-foreground"
