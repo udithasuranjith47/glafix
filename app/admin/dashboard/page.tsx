@@ -8,6 +8,7 @@ import { PostsTable } from "@/components/admin/PostsTable";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { PenSquare, FileText, Globe, FileEdit, RefreshCw } from "lucide-react";
 
 export default function DashboardPage() {
@@ -19,8 +20,9 @@ export default function DashboardPage() {
     try {
       const all = await getAllPosts();
       setPosts(all);
-    } catch {
-      // fail silently — user sees empty state
+    } catch (err) {
+      console.error("Failed to load posts:", err);
+      toast.error("Failed to load posts. Check console for details.");
     } finally {
       setLoading(false);
     }

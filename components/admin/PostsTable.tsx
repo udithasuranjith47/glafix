@@ -32,22 +32,22 @@ interface PostsTableProps {
 }
 
 export function PostsTable({ posts, onRefresh }: PostsTableProps) {
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
-    if (!deleteId) return;
+    if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deletePost(deleteId);
+      await deletePost(deleteTarget.id);
       toast.success("Post deleted");
       onRefresh();
     } catch {
       toast.error("Failed to delete post");
     } finally {
       setDeleting(false);
-      setDeleteId(null);
+      setDeleteTarget(null);
     }
   }
 
@@ -149,7 +149,7 @@ export function PostsTable({ posts, onRefresh }: PostsTableProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setDeleteId(post.id)}
+                      onClick={() => setDeleteTarget({ id: post.id, title: post.title })}
                       className="w-8 h-8 text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -162,25 +162,29 @@ export function PostsTable({ posts, onRefresh }: PostsTableProps) {
         </Table>
       </div>
 
-      <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <DialogContent className="bg-card border-border">
+      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete post?</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. The post will be permanently removed.
+            <DialogTitle className="text-foreground">Delete this post?</DialogTitle>
+            <DialogDescription className="pt-2">
+              <span className="block text-foreground font-medium mb-1 line-clamp-2">
+                &ldquo;{deleteTarget?.title}&rdquo;
+              </span>
+              This will permanently delete the post and cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              className="gap-2"
             >
-              {deleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Delete
+              {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {deleting ? "Deleting…" : "Yes, delete permanently"}
             </Button>
           </DialogFooter>
         </DialogContent>
