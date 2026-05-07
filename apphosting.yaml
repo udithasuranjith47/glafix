@@ -20,5 +20,3 @@ env:
     value: "1:835461559097:web:c20f3ab2e0450abe8d6ee8"
   - variable: NEXT_PUBLIC_ADMIN_EMAIL
     value: udithasuranjith@icloud.com
-  - variable: OPENAI_API_KEY
-    secret: OPENAI_API_KEY
