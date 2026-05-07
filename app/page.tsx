@@ -11,6 +11,7 @@ import { CategoryFilter } from "@/components/public/CategoryFilter";
 import { PostGrid } from "@/components/public/PostGrid";
 import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
 import { getFeaturedPost, getHomepageConfig, getPostsByIds } from "@/lib/firestore";
+import { NewsletterForm } from "@/components/public/NewsletterForm";
 import { Post, PostCategory } from "@/types/post";
 
 /* ─── Trust / Cited-By strip ─────────────────────────────────── */
@@ -81,42 +82,7 @@ function NewsletterSignup() {
           The exact tools, tiers, and setup order we use to run a one-person business. Free.
           No spam — one email when we publish something worth reading.
         </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const email = (e.currentTarget.elements.namedItem("email") as HTMLInputElement)?.value;
-            if (email) {
-              import("firebase/firestore").then(({ addDoc, collection, serverTimestamp }) => {
-                import("@/lib/firebase").then(({ db }) => {
-                  addDoc(collection(db, "newsletter"), { email, subscribedAt: serverTimestamp() })
-                    .then(() => {
-                      (e.target as HTMLFormElement).reset();
-                      alert("You're in! Check your inbox.");
-                    })
-                    .catch(() => alert("Something went wrong — email us directly at hello@glafix.com"));
-                });
-              });
-            }
-          }}
-          className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-        >
-          <input
-            type="email"
-            name="email"
-            required
-            placeholder="your@email.com"
-            className="flex-1 px-4 py-3 rounded-xl border border-border bg-muted/20 text-foreground placeholder:text-muted-foreground/50 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-          />
-          <button
-            type="submit"
-            className="px-6 py-3 rounded-xl bg-primary text-background font-semibold text-sm hover:bg-primary/90 transition-all shrink-0"
-          >
-            Send me the checklist
-          </button>
-        </form>
-        <p className="text-xs text-muted-foreground/60 mt-4">
-          Unsubscribe any time. We hate spam as much as you do.
-        </p>
+        <NewsletterForm />
       </div>
     </section>
   );
