@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +37,14 @@ type Mode = "password" | "magic";
 type State = "form" | "link-sent" | "link-confirm" | "completing";
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense>
+      <AdminLoginContent />
+    </Suspense>
+  );
+}
+
+function AdminLoginContent() {
   const { signIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -193,8 +201,7 @@ export default function AdminLoginPage() {
               <div>
                 <h2 className="font-semibold text-foreground text-lg mb-1">Check your inbox</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Sent a sign-in link to{" "}
-                  <span className="text-foreground font-medium">{ADMIN_EMAIL}</span>.
+                  A sign-in link has been sent to the admin email.
                   Click the link to sign in — no password needed.
                 </p>
               </div>
@@ -325,11 +332,9 @@ export default function AdminLoginPage() {
                 {mode === "magic" && (
                   <div className="space-y-5">
                     <p className="text-sm text-muted-foreground leading-relaxed -mt-1">
-                      Send a one-click sign-in link to your admin email. No password needed.
+                      Send a one-click sign-in link to the registered admin email.
+                      Check your inbox after clicking the button below.
                     </p>
-                    <div className="p-3 rounded-lg bg-muted/20 border border-border text-sm text-foreground font-mono">
-                      {ADMIN_EMAIL || "No admin email configured"}
-                    </div>
                     <Button
                       onClick={sendMagicLink}
                       className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
