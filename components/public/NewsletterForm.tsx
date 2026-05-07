@@ -3,38 +3,32 @@
 import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function NewsletterForm() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
-    setStatus("loading");
+    setLoading(true);
     try {
       await addDoc(collection(db, "newsletter"), {
         email: email.trim().toLowerCase(),
         subscribedAt: serverTimestamp(),
       });
-      setStatus("success");
       setEmail("");
+      toast.success("Thank you for subscribing!", {
+        description: "We'll notify you when we publish something worth reading.",
+        duration: 4000,
+      });
     } catch {
-      setStatus("error");
+      toast.error("Something went wrong — please try again.");
+    } finally {
+      setLoading(false);
     }
-  }
-
-  if (status === "success") {
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-          <CheckCircle className="w-6 h-6 text-emerald-400" />
-        </div>
-        <p className="text-sm font-medium text-foreground">You&apos;re in!</p>
-        <p className="text-xs text-muted-foreground">We&apos;ll email you the checklist shortly.</p>
-      </div>
-    );
   }
 
   return (
@@ -50,18 +44,13 @@ export function NewsletterForm() {
         />
         <button
           type="submit"
-          disabled={status === "loading"}
+          disabled={loading}
           className="px-6 py-3 rounded-xl bg-primary text-background font-semibold text-sm hover:bg-primary/90 transition-all shrink-0 disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          {status === "loading" && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           Send me the checklist
         </button>
       </form>
-      {status === "error" && (
-        <p className="text-xs text-destructive mt-2 text-center">
-          Something went wrong — please try again.
-        </p>
-      )}
       <p className="text-xs text-muted-foreground/60 mt-4">
         Unsubscribe any time. We hate spam as much as you do.
       </p>
