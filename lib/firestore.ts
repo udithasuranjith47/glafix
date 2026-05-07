@@ -6,6 +6,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   writeBatch,
   query,
   where,
@@ -250,6 +251,23 @@ export async function togglePostStatus(id: string, currentStatus: string): Promi
   const update: Record<string, unknown> = { status: newStatus, updatedAt: serverTimestamp() };
   if (newStatus === "published") update.publishedAt = serverTimestamp();
   await updateDoc(doc(db, POSTS_COLLECTION, id), update);
+}
+
+export async function getHomepageConfig(): Promise<{ topPicks: string[]; pillars: string[] }> {
+  const docSnap = await getDoc(doc(db, "config", "homepage"));
+  if (!docSnap.exists()) return { topPicks: [], pillars: [] };
+  const data = docSnap.data();
+  return { topPicks: data.topPicks ?? [], pillars: data.pillars ?? [] };
+}
+
+export async function setHomepageConfig(config: { topPicks: string[]; pillars: string[] }): Promise<void> {
+  await setDoc(doc(db, "config", "homepage"), config);
+}
+
+export async function getPostsByIds(ids: string[]): Promise<Post[]> {
+  if (!ids.length) return [];
+  const snaps = await Promise.all(ids.map((id) => getDoc(doc(db, POSTS_COLLECTION, id))));
+  return snaps.filter((d) => d.exists()).map((d) => docToPost(d));
 }
 
 export async function isSlugTaken(slug: string, excludeId?: string): Promise<boolean> {

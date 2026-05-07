@@ -10,7 +10,7 @@ import { HeroSection } from "@/components/public/HeroSection";
 import { CategoryFilter } from "@/components/public/CategoryFilter";
 import { PostGrid } from "@/components/public/PostGrid";
 import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
-import { getFeaturedPost } from "@/lib/firestore";
+import { getFeaturedPost, getHomepageConfig, getPostsByIds } from "@/lib/firestore";
 import { Post, PostCategory } from "@/types/post";
 
 /* ─── Cited-By strip ─────────────────────────────────────────── */
@@ -48,36 +48,11 @@ function CitedByStrip() {
   );
 }
 
-/* ─── Top Picks 2026 ─────────────────────────────────────────── */
+/* ─── Top Picks (dynamic) ─────────────────────────────────────── */
 
-const TOP_PICKS = [
-  {
-    badge: "All-in-One CRM & Funnels",
-    title: "Best AI Marketing Platform",
-    description:
-      "We tested every major funnel-builder, CRM, and email platform so you don't have to. One stack to replace your whole marketing team.",
-    href: "/best-ai-tools-2026",
-    tag: "GoHighLevel vs ClickFunnels 2.0",
-  },
-  {
-    badge: "Long-Form AI Writing",
-    title: "Best AI Writer 2026",
-    description:
-      "Side-by-side test of every major AI writing tool on real client projects. Which one actually ships publishable content, and which one needs a full edit?",
-    href: "/best-ai-tools-2026",
-    tag: "Jasper vs Claude vs ChatGPT",
-  },
-  {
-    badge: "No-Code + Automation",
-    title: "Best No-Code Stack",
-    description:
-      "The exact no-code + automation stack we use to run a 7-figure operation with zero in-house developers. Tested across 200+ workflows.",
-    href: "/best-ai-tools-2026",
-    tag: "Make vs Zapier vs n8n",
-  },
-];
+function TopPicks({ posts }: { posts: Post[] }) {
+  if (!posts.length) return null;
 
-function TopPicks() {
   return (
     <section className="py-20 bg-muted/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,29 +77,24 @@ function TopPicks() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {TOP_PICKS.map((pick) => (
-            <Link key={pick.title} href={pick.href} className="group block">
+          {posts.map((post) => (
+            <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
               <div className="h-full bg-card border border-border rounded-xl p-6 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 relative overflow-hidden">
-                {/* Gold top border */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
                 <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-primary border border-primary/30 rounded px-2 py-0.5 mb-4">
-                  {pick.badge}
+                  {post.category}
                 </span>
-
                 <h3
                   className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors"
                   style={{ fontFamily: "var(--font-playfair)" }}
                 >
-                  {pick.title}
+                  {post.title}
                 </h3>
-
                 <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                  {pick.description}
+                  {post.excerpt}
                 </p>
-
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground/60 font-mono">{pick.tag}</span>
+                  <span className="text-xs text-muted-foreground/60">{post.readTime} min read</span>
                   <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                 </div>
               </div>
@@ -136,49 +106,19 @@ function TopPicks() {
   );
 }
 
-/* ─── Pillar Grid ────────────────────────────────────────────── */
+/* ─── Pillar Grid (dynamic) ─────────────────────────────────────── */
 
-const PILLARS = [
-  {
-    icon: "⚡",
-    title: "Best AI Tools 2026",
-    description: "The master list. Every category, every top pick, ranked.",
-    href: "/best-ai-tools-2026",
-    hot: true,
-  },
-  {
-    icon: "✍️",
-    title: "Best AI Writers & Copywriting Tools",
-    description: "Long-form, emails, ads — which AI actually writes at a professional level?",
-    href: "/best-ai-tools-2026",
-  },
-  {
-    icon: "🏗️",
-    title: "Best No-Code App Builders",
-    description: "Ship products without engineers. Webflow, Framer, Bubble compared.",
-    href: "/best-ai-tools-2026",
-  },
-  {
-    icon: "📣",
-    title: "Best AI Marketing & CRM Platforms",
-    description: "GoHighLevel, HubSpot, ClickFunnels — which earns its keep?",
-    href: "/best-ai-tools-2026",
-  },
-  {
-    icon: "🔗",
-    title: "Best Automation Tools",
-    description: "Make vs Zapier vs n8n — tested across 200+ real client workflows.",
-    href: "/best-ai-tools-2026",
-  },
-  {
-    icon: "🎬",
-    title: "Best AI Video & Content Creation",
-    description: "Synthesia, HeyGen, Runway — the AI video stack for solo operators.",
-    href: "/best-ai-tools-2026",
-  },
-];
+const CATEGORY_ICONS: Record<string, string> = {
+  Reviews: "⭐",
+  Tutorials: "📚",
+  "Case Studies": "🏗️",
+  Tools: "🔗",
+  News: "📣",
+};
 
-function PillarGrid() {
+function PillarGrid({ posts }: { posts: Post[] }) {
+  if (!posts.length) return null;
+
   return (
     <section className="py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -199,22 +139,24 @@ function PillarGrid() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {PILLARS.map((p) => (
-            <Link key={p.title} href={p.href} className="group block">
+          {posts.map((post, i) => (
+            <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
               <div className="h-full bg-card border border-border rounded-xl p-5 hover:border-primary/40 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 flex gap-4">
-                <span className="text-2xl shrink-0 mt-0.5">{p.icon}</span>
+                <span className="text-2xl shrink-0 mt-0.5">
+                  {CATEGORY_ICONS[post.category] ?? "📄"}
+                </span>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {p.title}
+                      {post.title}
                     </h3>
-                    {p.hot && (
+                    {i === 0 && (
                       <span className="text-[9px] font-bold uppercase tracking-wider text-background bg-primary rounded px-1.5 py-0.5">
                         Hot
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{p.description}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{post.excerpt}</p>
                 </div>
               </div>
             </Link>
@@ -255,7 +197,6 @@ function WhyTrustUs() {
     <section className="py-20 border-t border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Left — founder note */}
           <div>
             <p className="text-primary text-xs font-semibold uppercase tracking-[0.2em] mb-3">
               Why Trust Glafix
@@ -297,7 +238,6 @@ function WhyTrustUs() {
             </div>
           </div>
 
-          {/* Right — trust signals */}
           <div className="grid sm:grid-cols-2 gap-4">
             {TRUST_SIGNALS.map(({ icon: Icon, label, detail }) => (
               <div
@@ -324,12 +264,25 @@ function HomeContent() {
   const category = searchParams.get("category");
   const [featuredPost, setFeaturedPost] = useState<Post | null>(null);
   const [heroLoading, setHeroLoading] = useState(true);
+  const [topPickPosts, setTopPickPosts] = useState<Post[]>([]);
+  const [pillarPosts, setPillarPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     getFeaturedPost()
       .then((post) => setFeaturedPost(post))
       .catch(() => setFeaturedPost(null))
       .finally(() => setHeroLoading(false));
+  }, []);
+
+  useEffect(() => {
+    getHomepageConfig().then(async (config) => {
+      const [picks, pillars] = await Promise.all([
+        getPostsByIds(config.topPicks),
+        getPostsByIds(config.pillars),
+      ]);
+      setTopPickPosts(picks);
+      setPillarPosts(pillars);
+    }).catch(() => {});
   }, []);
 
   const activeCategory = category ?? "All";
@@ -352,8 +305,8 @@ function HomeContent() {
       {/* 2. Cited-By strip */}
       <CitedByStrip />
 
-      {/* 3. Top Picks 2026 */}
-      <TopPicks />
+      {/* 3. Top Picks (admin-managed) */}
+      <TopPicks posts={topPickPosts} />
 
       {/* 4. Latest Reviews */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
@@ -375,8 +328,8 @@ function HomeContent() {
         />
       </section>
 
-      {/* 5. Pillar Grid */}
-      <PillarGrid />
+      {/* 5. Pillar Grid (admin-managed) */}
+      <PillarGrid posts={pillarPosts} />
 
       {/* 6. Why Trust Us */}
       <WhyTrustUs />

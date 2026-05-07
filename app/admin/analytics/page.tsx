@@ -156,7 +156,6 @@ export default function AnalyticsPage() {
         setLoadingStats(false);
       }
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, []);
 

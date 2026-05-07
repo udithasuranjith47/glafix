@@ -2,18 +2,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /posts/{postId} {
-      // Anyone can read published posts
-      // Only the admin email can read drafts or write anything
       allow read: if resource.data.status == 'published'
                   || request.auth.token.email == 'udithasuranjith@icloud.com';
       allow write: if request.auth.token.email == 'udithasuranjith@icloud.com';
     }
 
     match /analytics/{docId} {
-      // Any visitor can record a pageview (write-only, no auth required)
       allow create: if true;
-      // Only admin can read, update, or delete analytics records
       allow read, update, delete: if request.auth.token.email == 'udithasuranjith@icloud.com';
+    }
+
+    match /config/{docId} {
+      // Public read so homepage can fetch sections without auth
+      allow read: if true;
+      allow write: if request.auth.token.email == 'udithasuranjith@icloud.com';
     }
   }
 }

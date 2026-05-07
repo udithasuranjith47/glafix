@@ -7,7 +7,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, Save, Send, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, Save, Send, Clock, Sparkles, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,11 +60,27 @@ const autoSaveStatusLabel: Record<string, string> = {
   error: "Save failed",
 };
 
+type AiLoadingKey = "seo-title" | "meta-description" | "excerpt" | "title-variants" | null;
+
+async function fetchSuggestion(type: string, title: string, excerpt: string): Promise<string> {
+  const res = await fetch("/api/suggest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, title, excerpt }),
+  });
+  if (!res.ok) throw new Error("AI request failed");
+  const data = await res.json();
+  return data.suggestion as string;
+}
+
 export function PostForm({ post }: PostFormProps) {
   const router = useRouter();
   const [postId, setPostId] = useState<string | null>(post?.id ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState<AiLoadingKey>(null);
+  const [titleVariants, setTitleVariants] = useState<string>("");
 
   const {
     register,
@@ -103,6 +119,33 @@ export function PostForm({ post }: PostFormProps) {
 
   const getData = useCallback((): Partial<FormValues> => getValues(), [getValues]);
   const { status: saveStatus } = useAutoSave(postId, getData);
+
+  async function runAi(type: AiLoadingKey) {
+    if (!type) return;
+    setAiLoading(type);
+    setTitleVariants("");
+    try {
+      const suggestion = await fetchSuggestion(type, titleValue, excerptValue);
+      if (type === "seo-title") {
+        setValue("seoTitle", suggestion);
+        setSeoOpen(true);
+        toast.success("SEO title applied");
+      } else if (type === "meta-description") {
+        setValue("seoDescription", suggestion.slice(0, 160));
+        setSeoOpen(true);
+        toast.success("Meta description applied");
+      } else if (type === "excerpt") {
+        setValue("excerpt", suggestion.slice(0, 160));
+        toast.success("Excerpt applied");
+      } else if (type === "title-variants") {
+        setTitleVariants(suggestion);
+      }
+    } catch {
+      toast.error("AI suggestion failed — check your API key");
+    } finally {
+      setAiLoading(null);
+    }
+  }
 
   async function onSubmit(data: FormValues, publish?: boolean) {
     setSubmitting(true);
@@ -261,6 +304,72 @@ export function PostForm({ post }: PostFormProps) {
             <RichTextEditor content={field.value} onChange={field.onChange} />
           )}
         />
+      </div>
+
+      <Separator className="bg-border" />
+
+      {/* AI Assist (collapsible) */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setAiOpen(!aiOpen)}
+          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+        >
+          {aiOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <Sparkles className="w-4 h-4 text-primary" />
+          AI Assist
+        </button>
+
+        {aiOpen && (
+          <div className="mt-4 p-4 bg-muted/10 rounded-xl border border-border space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Generate suggestions based on your title and excerpt. Results are applied directly to the relevant fields.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { key: "excerpt", label: "Suggest Excerpt" },
+                  { key: "seo-title", label: "Suggest SEO Title" },
+                  { key: "meta-description", label: "Suggest Meta Description" },
+                  { key: "title-variants", label: "Title Variants" },
+                ] as { key: AiLoadingKey; label: string }[]
+              ).map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={aiLoading !== null || !titleValue}
+                  onClick={() => runAi(key)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/5 text-xs text-primary hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {aiLoading === key ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3" />
+                  )}
+                  {label}
+                </button>
+              ))}
+            </div>
+            {!titleValue && (
+              <p className="text-xs text-muted-foreground/60">Add a title first to enable suggestions.</p>
+            )}
+            {titleVariants && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-foreground">Title variants — click to apply:</p>
+                {titleVariants.split("\n").filter(Boolean).map((v, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { setValue("title", v.replace(/^["']|["']$/g, "").trim()); setTitleVariants(""); }}
+                    className="block w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 px-3 py-2 rounded-lg transition-colors"
+                  >
+                    {v.replace(/^["']|["']$/g, "").trim()}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Separator className="bg-border" />
