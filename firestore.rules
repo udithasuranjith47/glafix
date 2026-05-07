@@ -2,10 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /posts/{postId} {
-      // Public: read only published posts
-      // Admin (authenticated): read all posts (drafts included)
-      allow read: if resource.data.status == 'published' || request.auth != null;
-      allow write: if request.auth != null;
+      // Anyone can read published posts
+      // Only the admin email can read drafts or write anything
+      allow read: if resource.data.status == 'published'
+                  || request.auth.token.email == 'udithasuranjith@icloud.com';
+      allow write: if request.auth.token.email == 'udithasuranjith@icloud.com';
     }
   }
 }
