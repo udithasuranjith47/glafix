@@ -6,6 +6,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -28,6 +29,7 @@ function docToPost(docSnap: DocumentSnapshot | QueryDocumentSnapshot): Post {
     slug: data.slug,
     category: data.category,
     status: data.status,
+    featured: data.featured === true,
     excerpt: data.excerpt,
     featuredImage: data.featuredImage || "",
     content: data.content,
@@ -134,6 +136,30 @@ export async function getRelatedPosts(
     .map(docToPost)
     .filter((p) => p.slug !== excludeSlug)
     .slice(0, count);
+}
+
+export async function getFeaturedPost(): Promise<Post | null> {
+  const q = query(
+    collection(db, POSTS_COLLECTION),
+    where("featured", "==", true),
+    where("status", "==", "published"),
+    limit(1)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return docToPost(snapshot.docs[0]);
+}
+
+export async function setFeaturedPost(id: string): Promise<void> {
+  const batch = writeBatch(db);
+  // Clear any existing featured posts
+  const currentFeatured = await getDocs(
+    query(collection(db, POSTS_COLLECTION), where("featured", "==", true))
+  );
+  currentFeatured.docs.forEach((d) => batch.update(d.ref, { featured: false }));
+  // Set the new featured post
+  batch.update(doc(db, POSTS_COLLECTION, id), { featured: true });
+  await batch.commit();
 }
 
 export async function getAllPosts(): Promise<Post[]> {

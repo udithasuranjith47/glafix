@@ -15,6 +15,7 @@ export interface Post {
   slug: string;
   category: PostCategory;
   status: PostStatus;
+  featured: boolean;
   excerpt: string;
   featuredImage: string;
   content: string;
@@ -26,4 +27,4 @@ export interface Post {
   publishedAt: Timestamp | null;
 }
 
-export type PostFormData = Omit<Post, "id" | "createdAt" | "updatedAt" | "publishedAt" | "readTime">;
+export type PostFormData = Omit<Post, "id" | "createdAt" | "updatedAt" | "publishedAt" | "readTime" | "featured">;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { Post } from "@/types/post";
-import { deletePost, togglePostStatus } from "@/lib/firestore";
+import { deletePost, togglePostStatus, setFeaturedPost } from "@/lib/firestore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Edit, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Edit, Trash2, Eye, EyeOff, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 
 interface PostsTableProps {
@@ -34,6 +34,7 @@ interface PostsTableProps {
 export function PostsTable({ posts, onRefresh }: PostsTableProps) {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [featuringId, setFeaturingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
@@ -48,6 +49,20 @@ export function PostsTable({ posts, onRefresh }: PostsTableProps) {
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
+    }
+  }
+
+  async function handleSetFeatured(post: Post) {
+    if (post.featured) return; // already featured, nothing to do
+    setFeaturingId(post.id);
+    try {
+      await setFeaturedPost(post.id);
+      toast.success(`"${post.title}" is now the featured post`);
+      onRefresh();
+    } catch {
+      toast.error("Failed to set featured post");
+    } finally {
+      setFeaturingId(null);
     }
   }
 
@@ -95,7 +110,15 @@ export function PostsTable({ posts, onRefresh }: PostsTableProps) {
               <TableRow key={post.id} className="hover:bg-muted/10">
                 <TableCell>
                   <div>
-                    <p className="font-medium text-foreground line-clamp-1">{post.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground line-clamp-1">{post.title}</p>
+                      {post.featured && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary border border-primary/30 rounded px-1.5 py-0.5 shrink-0">
+                          <Star className="w-2.5 h-2.5 fill-primary" />
+                          Featured
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5 font-mono">/{post.slug}</p>
                   </div>
                 </TableCell>
@@ -121,6 +144,22 @@ export function PostsTable({ posts, onRefresh }: PostsTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
+                    {post.status === "published" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleSetFeatured(post)}
+                        disabled={featuringId === post.id || post.featured}
+                        title={post.featured ? "Currently featured" : "Set as featured"}
+                        className={`w-8 h-8 ${post.featured ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                      >
+                        {featuringId === post.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Star className={`w-3.5 h-3.5 ${post.featured ? "fill-primary" : ""}`} />
+                        )}
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"

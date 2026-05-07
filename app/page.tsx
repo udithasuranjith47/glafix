@@ -8,7 +8,7 @@ import { HeroSection } from "@/components/public/HeroSection";
 import { CategoryFilter } from "@/components/public/CategoryFilter";
 import { PostGrid } from "@/components/public/PostGrid";
 import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
-import { getPublishedPosts } from "@/lib/firestore";
+import { getPublishedPosts, getFeaturedPost } from "@/lib/firestore";
 import { Post, PostCategory } from "@/types/post";
 
 function HomeContent() {
@@ -18,8 +18,8 @@ function HomeContent() {
   const [heroLoading, setHeroLoading] = useState(true);
 
   useEffect(() => {
-    getPublishedPosts(1)
-      .then(({ posts }) => setFeaturedPost(posts[0] ?? null))
+    getFeaturedPost()
+      .then((post) => setFeaturedPost(post))
       .catch(() => setFeaturedPost(null))
       .finally(() => setHeroLoading(false));
   }, []);
