@@ -16,8 +16,23 @@ import {
   DocumentSnapshot,
   QueryDocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { ref as storageRef, deleteObject } from "firebase/storage";
+import { db, storage } from "./firebase";
 import { Post, PostCategory, PostFormData } from "@/types/post";
+
+function extractStorageUrls(html: string): string[] {
+  const matches = html.match(/https:\/\/firebasestorage\.googleapis\.com\/[^"'\s>)]+/g);
+  return [...new Set(matches ?? [])];
+}
+
+function storagePathFromUrl(url: string): string | null {
+  try {
+    const match = url.match(/\/o\/([^?#]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
 
 const POSTS_COLLECTION = "posts";
 
@@ -208,7 +223,26 @@ export async function updatePost(id: string, data: Partial<PostFormData>): Promi
 }
 
 export async function deletePost(id: string): Promise<void> {
-  await deleteDoc(doc(db, POSTS_COLLECTION, id));
+  const docRef = doc(db, POSTS_COLLECTION, id);
+  const snap = await getDoc(docRef);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    const urls: string[] = [];
+    if (data.featuredImage) urls.push(data.featuredImage);
+    if (data.content) urls.push(...extractStorageUrls(data.content));
+
+    await Promise.allSettled(
+      urls
+        .filter((u) => u.includes("firebasestorage.googleapis.com"))
+        .map((url) => {
+          const path = storagePathFromUrl(url);
+          return path ? deleteObject(storageRef(storage, path)) : Promise.resolve();
+        })
+    );
+  }
+
+  await deleteDoc(docRef);
 }
 
 export async function togglePostStatus(id: string, currentStatus: string): Promise<void> {

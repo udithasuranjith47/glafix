@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Node, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -12,6 +13,7 @@ import Highlight from "@tiptap/extension-highlight";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
+import Youtube from "@tiptap/extension-youtube";
 import { common, createLowlight } from "lowlight";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
@@ -23,11 +25,27 @@ import {
   List, ListOrdered, Quote, Code, Code2,
   AlignLeft, AlignCenter, AlignRight,
   Image as ImageIcon, Link as LinkIcon, Minus, Highlighter,
-  Loader2,
+  Video, MonitorPlay,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const lowlight = createLowlight(common);
+
+// Custom Video node — renders <video controls> in content
+const VideoNode = Node.create({
+  name: "video",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return { src: { default: null } };
+  },
+  parseHTML() {
+    return [{ tag: "video[src]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["video", mergeAttributes({ controls: true, playsinline: true }, HTMLAttributes)];
+  },
+});
 
 interface RichTextEditorProps {
   content: string;
@@ -67,14 +85,13 @@ function Divider() {
 }
 
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const uploadingRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-      }),
+      StarterKit.configure({ codeBlock: false }),
       Underline,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Image.configure({ inline: false, allowBase64: false }),
@@ -84,15 +101,15 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       CodeBlockLowlight.configure({ lowlight }),
       TextStyle,
       Color,
+      Youtube.configure({ width: 640, height: 360, nocookie: true }),
+      VideoNode,
     ],
     content,
     onUpdate({ editor }) {
       onChange(editor.getHTML());
     },
     editorProps: {
-      attributes: {
-        class: "tiptap-editor",
-      },
+      attributes: { class: "tiptap-editor" },
     },
   });
 
@@ -108,23 +125,36 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     editor.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
-  async function handleImageUpload(file: File) {
+  const insertYoutube = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt("Paste YouTube URL");
+    if (!url) return;
+    editor.chain().focus().setYoutubeVideo({ src: url }).run();
+  }, [editor]);
+
+  async function handleUpload(file: File, type: "image" | "video") {
     if (!editor || uploadingRef.current) return;
-    if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10MB"); return; }
-
+    const maxMB = type === "image" ? 10 : 200;
+    if (file.size > maxMB * 1024 * 1024) {
+      toast.error(`File must be under ${maxMB}MB`);
+      return;
+    }
     uploadingRef.current = true;
-    const toastId = toast.loading("Uploading image…");
-
+    const toastId = toast.loading(`Uploading ${type}…`);
     try {
-      const storageRef = ref(storage, `editor/${Date.now()}-${file.name.replace(/\s+/g, "-")}`);
+      const folder = type === "image" ? "editor" : "editor/videos";
+      const storageRef = ref(storage, `${folder}/${Date.now()}-${file.name.replace(/\s+/g, "-")}`);
       const task = uploadBytesResumable(storageRef, file);
       await new Promise<void>((resolve, reject) => {
         task.on("state_changed", null, reject, resolve);
       });
       const url = await getDownloadURL(task.snapshot.ref);
-      editor.chain().focus().setImage({ src: url, alt: file.name }).run();
-      toast.success("Image inserted", { id: toastId });
+      if (type === "image") {
+        editor.chain().focus().setImage({ src: url, alt: file.name }).run();
+      } else {
+        editor.chain().focus().insertContent({ type: "video", attrs: { src: url } }).run();
+      }
+      toast.success(`${type === "image" ? "Image" : "Video"} inserted`, { id: toastId });
     } catch {
       toast.error("Upload failed", { id: toastId });
     } finally {
@@ -138,7 +168,6 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     <div className="border border-border rounded-xl overflow-hidden bg-card">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-border bg-muted/20">
-        {/* Text style */}
         <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Bold">
           <Bold className="w-4 h-4" />
         </ToolbarButton>
@@ -157,7 +186,6 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
         <Divider />
 
-        {/* Headings */}
         <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Heading 1">
           <Heading1 className="w-4 h-4" />
         </ToolbarButton>
@@ -170,7 +198,6 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
         <Divider />
 
-        {/* Lists */}
         <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Bullet List">
           <List className="w-4 h-4" />
         </ToolbarButton>
@@ -180,7 +207,6 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
         <Divider />
 
-        {/* Block */}
         <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Blockquote">
           <Quote className="w-4 h-4" />
         </ToolbarButton>
@@ -196,7 +222,6 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
         <Divider />
 
-        {/* Alignment */}
         <ToolbarButton onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Align Left">
           <AlignLeft className="w-4 h-4" />
         </ToolbarButton>
@@ -209,12 +234,17 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
         <Divider />
 
-        {/* Media & Links */}
         <ToolbarButton onClick={setLink} active={editor.isActive("link")} title="Insert Link">
           <LinkIcon className="w-4 h-4" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => fileInputRef.current?.click()} title="Insert Image">
+        <ToolbarButton onClick={() => imageInputRef.current?.click()} title="Upload Image">
           <ImageIcon className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => videoInputRef.current?.click()} title="Upload Video">
+          <Video className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton onClick={insertYoutube} title="Embed YouTube Video">
+          <MonitorPlay className="w-4 h-4" />
         </ToolbarButton>
       </div>
 
@@ -223,19 +253,29 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         <EditorContent editor={editor} />
       </div>
 
-      {/* Hidden file input for image upload */}
+      {/* Hidden file inputs */}
       <input
-        ref={fileInputRef}
+        ref={imageInputRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleImageUpload(file);
+          if (file) handleUpload(file, "image");
           e.target.value = "";
         }}
       />
-
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleUpload(file, "video");
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
