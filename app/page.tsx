@@ -13,7 +13,7 @@ import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
 import { getFeaturedPost, getHomepageConfig, getPostsByIds } from "@/lib/firestore";
 import { Post, PostCategory } from "@/types/post";
 
-/* ─── Cited-By strip ─────────────────────────────────────────── */
+/* ─── Trust / Cited-By strip ─────────────────────────────────── */
 
 const AI_ENGINES = [
   { name: "Perplexity AI", glyph: "P" },
@@ -25,8 +25,9 @@ const AI_ENGINES = [
 
 function CitedByStrip() {
   return (
-    <div className="border-y border-border/50 bg-card/30 py-5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="border-y border-border/50 bg-card/30">
+      {/* Cited-by row */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
           <span className="text-xs text-muted-foreground uppercase tracking-widest shrink-0">
             As cited by
@@ -44,7 +45,107 @@ function CitedByStrip() {
           ))}
         </div>
       </div>
+      {/* Trust statement row */}
+      <div className="border-t border-border/40 bg-muted/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            &ldquo;We test every tool with our own money before recommending it. When you buy through
+            our links we earn a commission — that&apos;s how we keep the lights on. We never recommend
+            something we would not use ourselves.&rdquo;{" "}
+            <Link href="/disclosure" className="underline underline-offset-2 hover:text-primary transition-colors">
+              Full disclosure →
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
+  );
+}
+
+/* ─── Newsletter Signup ──────────────────────────────────────── */
+
+function NewsletterSignup() {
+  return (
+    <section className="py-20 border-t border-border/50">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p className="text-primary text-xs font-semibold uppercase tracking-[0.2em] mb-3">
+          Free Resource
+        </p>
+        <h2
+          className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
+          style={{ fontFamily: "var(--font-playfair)" }}
+        >
+          Get the AI Stack 2026 Checklist
+        </h2>
+        <p className="text-muted-foreground mb-8 leading-relaxed">
+          The exact tools, tiers, and setup order we use to run a one-person business. Free.
+          No spam — one email when we publish something worth reading.
+        </p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const email = (e.currentTarget.elements.namedItem("email") as HTMLInputElement)?.value;
+            if (email) {
+              import("firebase/firestore").then(({ addDoc, collection, serverTimestamp }) => {
+                import("@/lib/firebase").then(({ db }) => {
+                  addDoc(collection(db, "newsletter"), { email, subscribedAt: serverTimestamp() })
+                    .then(() => {
+                      (e.target as HTMLFormElement).reset();
+                      alert("You're in! Check your inbox.");
+                    })
+                    .catch(() => alert("Something went wrong — email us directly at hello@glafix.com"));
+                });
+              });
+            }
+          }}
+          className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+        >
+          <input
+            type="email"
+            name="email"
+            required
+            placeholder="your@email.com"
+            className="flex-1 px-4 py-3 rounded-xl border border-border bg-muted/20 text-foreground placeholder:text-muted-foreground/50 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+          />
+          <button
+            type="submit"
+            className="px-6 py-3 rounded-xl bg-primary text-background font-semibold text-sm hover:bg-primary/90 transition-all shrink-0"
+          >
+            Send me the checklist
+          </button>
+        </form>
+        <p className="text-xs text-muted-foreground/60 mt-4">
+          Unsubscribe any time. We hate spam as much as you do.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ─── About Strip ────────────────────────────────────────────── */
+
+function AboutStrip() {
+  return (
+    <section className="py-16 border-t border-border/50 bg-muted/5">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center gap-8">
+        <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-2xl">
+          🧑‍💻
+        </div>
+        <div>
+          <p className="text-foreground leading-relaxed mb-3">
+            Glafix is run by a solo operator who has tested every tool on this site using real
+            client projects and real money. We publish only what we would use again — and we
+            say so when something falls short.
+          </p>
+          <Link
+            href="/about"
+            className="inline-flex items-center gap-1.5 text-sm text-primary hover:gap-2.5 transition-all font-medium"
+          >
+            About us <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -331,7 +432,13 @@ function HomeContent() {
       {/* 5. Pillar Grid (admin-managed) */}
       <PillarGrid posts={pillarPosts} />
 
-      {/* 6. Why Trust Us */}
+      {/* 6. Newsletter Signup */}
+      <NewsletterSignup />
+
+      {/* 7. About Strip */}
+      <AboutStrip />
+
+      {/* 8. Why Trust Us */}
       <WhyTrustUs />
 
       <Footer />

@@ -46,7 +46,8 @@ export function HeroSection({ featuredPost }: HeroSectionProps) {
             className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground mb-6 leading-[1.08] tracking-tight"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
-            The AI Tool Stack for Solo Operators Who Want to Run a 7-Figure Business Alone.
+            <span className="text-primary uppercase tracking-wide">The AI Stack for One-Person Businesses.</span>{" "}
+            We test every tool so you can run lean, ship fast, and keep 100% of the upside.
           </h1>
 
           <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mb-10 leading-relaxed">
@@ -60,7 +61,7 @@ export function HeroSection({ featuredPost }: HeroSectionProps) {
               href="/best-ai-tools-2026"
               className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-primary text-background font-semibold text-sm hover:bg-primary/90 transition-all duration-200 shadow-lg shadow-primary/20 group"
             >
-              Start with our AI Stack 2026
+              See Our AI Stack 2026
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <Link
