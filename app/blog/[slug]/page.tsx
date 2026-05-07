@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `https://glafix.com/blog/${slug}`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     openGraph: {
       title,

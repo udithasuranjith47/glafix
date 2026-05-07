@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!description) return { title: "Category Not Found" };
 
   return {
-    title: `${category} | Glafix`,
+    title: { absolute: `${category} | Glafix` },
     description,
     openGraph: {
       title: `${category} — Glafix`,
