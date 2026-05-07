@@ -8,5 +8,12 @@ service cloud.firestore {
                   || request.auth.token.email == 'udithasuranjith@icloud.com';
       allow write: if request.auth.token.email == 'udithasuranjith@icloud.com';
     }
+
+    match /analytics/{docId} {
+      // Any visitor can record a pageview (write-only, no auth required)
+      allow create: if true;
+      // Only admin can read, update, or delete analytics records
+      allow read, update, delete: if request.auth.token.email == 'udithasuranjith@icloud.com';
+    }
   }
 }
