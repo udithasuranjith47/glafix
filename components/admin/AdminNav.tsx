@@ -20,7 +20,7 @@ export function AdminNav() {
   return (
     <aside className="w-60 min-h-screen bg-card border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href="/admin/dashboard" className="flex items-center gap-2 group">
           <Logo size={22} />
           <span className="text-sm font-bold" style={{ fontFamily: "var(--font-playfair)" }}>
             Glafix
