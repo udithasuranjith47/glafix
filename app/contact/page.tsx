@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
-import { Mail, MessageSquare, FileText } from "lucide-react";
+import { ContactForm } from "@/components/public/ContactForm";
+import { FileText, MessageSquare, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: { absolute: "Contact Glafix" },
@@ -25,7 +26,7 @@ const REASONS = [
     icon: Mail,
     title: "Press & media",
     description:
-      "For press enquiries, interview requests, or data citation permissions, email us directly with your publication and deadline.",
+      "For press enquiries, interview requests, or data citation permissions, include your publication and deadline.",
   },
 ];
 
@@ -46,27 +47,17 @@ export default function ContactPage() {
             Contact
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            No contact form — just a real email. We respond to every message.
+            Fill in the form below and we&apos;ll get back to you within 24 hours on business days.
           </p>
         </div>
 
-        {/* Email CTA */}
+        {/* Contact form */}
         <div className="mb-12 p-6 bg-card border border-border rounded-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Email us at</p>
-          <a
-            href="mailto:hello@glafix.com"
-            className="text-2xl font-bold text-primary hover:text-primary/80 transition-colors"
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
-            hello@glafix.com
-          </a>
-          <p className="text-sm text-muted-foreground mt-2">
-            Typical response time: within 24 hours on business days.
-          </p>
+          <ContactForm />
         </div>
 
-        {/* Reason cards */}
+        {/* Reason guidance */}
         <div className="space-y-4 mb-12">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-5">
             What to include in your message

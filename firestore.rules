@@ -13,9 +13,20 @@ service cloud.firestore {
     }
 
     match /config/{docId} {
-      // Public read so homepage can fetch sections without auth
       allow read: if true;
       allow write: if request.auth.token.email == 'udithasuranjith@icloud.com';
+    }
+
+    match /contacts/{docId} {
+      // Anyone can submit a contact form
+      allow create: if true;
+      // Only admin can read submissions
+      allow read, update, delete: if request.auth.token.email == 'udithasuranjith@icloud.com';
+    }
+
+    match /newsletter/{docId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth.token.email == 'udithasuranjith@icloud.com';
     }
   }
 }

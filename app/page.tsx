@@ -133,9 +133,9 @@ function AboutStrip() {
         </div>
         <div>
           <p className="text-foreground leading-relaxed mb-3">
-            Glafix is run by a solo operator who has tested every tool on this site using real
-            client projects and real money. We publish only what we would use again — and we
-            say so when something falls short.
+            Glafix is a one-person operation. Every tool on this site has been tested with real
+            client projects and real money — we only publish what passes, and we say so when
+            something falls short.
           </p>
           <Link
             href="/about"
