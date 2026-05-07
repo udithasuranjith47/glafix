@@ -6,11 +6,11 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 const navLinks = [
+  { label: "AI Stack 2026", href: "/best-ai-tools-2026", highlight: true },
   { label: "Reviews", href: "/category/Reviews" },
   { label: "Tutorials", href: "/category/Tutorials" },
   { label: "Case Studies", href: "/category/Case%20Studies" },
   { label: "Tools", href: "/category/Tools" },
-  { label: "News", href: "/category/News" },
 ];
 
 export function Navbar() {
@@ -43,12 +43,16 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-7">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
+                className={
+                  link.highlight
+                    ? "text-sm font-semibold text-primary hover:text-primary/80 transition-colors duration-200"
+                    : "text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
+                }
               >
                 {link.label}
               </Link>
@@ -72,7 +76,11 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                className={
+                  link.highlight
+                    ? "text-sm font-semibold text-primary"
+                    : "text-sm text-muted-foreground hover:text-primary transition-colors"
+                }
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
