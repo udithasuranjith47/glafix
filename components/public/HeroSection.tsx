@@ -47,7 +47,7 @@ export function HeroSection({ featuredPost }: HeroSectionProps) {
               Featured
             </p>
             <Link href={`/blog/${featuredPost.slug}`} className="group block">
-              <div className="relative grid lg:grid-cols-2 gap-0 rounded-xl overflow-hidden border border-border gold-border-glow transition-all duration-500">
+              <div className={`relative grid gap-0 rounded-xl overflow-hidden border border-border gold-border-glow transition-all duration-500 ${featuredPost.featuredImage ? "lg:grid-cols-2" : ""}`}>
                 {featuredPost.featuredImage && (
                   <div className="relative h-64 lg:h-auto lg:min-h-[400px] overflow-hidden">
                     <Image
