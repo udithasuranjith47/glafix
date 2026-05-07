@@ -24,9 +24,9 @@ export function AdminNav() {
     <aside className="w-60 min-h-screen bg-card border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
         <Link href="/admin/dashboard" className="flex items-center gap-2 group">
-          <Logo size={22} />
-          <span className="text-sm font-bold" style={{ fontFamily: "var(--font-playfair)" }}>
-            Glafix
+          <Logo size={32} />
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+            Admin
           </span>
         </Link>
         <p className="text-xs text-muted-foreground mt-1">Admin Panel</p>
