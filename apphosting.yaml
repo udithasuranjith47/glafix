@@ -1,0 +1,20 @@
+runConfig:
+  runtime: nodejs20
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 80
+  minInstances: 0
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyAXCWMB6sYWcrGAKqJNM_tcsTlZ_Bwuti0
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: glafix-32914.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: glafix-32914
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: glafix-32914.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "835461559097"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:835461559097:web:c20f3ab2e0450abe8d6ee8"
