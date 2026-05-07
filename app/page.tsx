@@ -8,7 +8,7 @@ import { HeroSection } from "@/components/public/HeroSection";
 import { CategoryFilter } from "@/components/public/CategoryFilter";
 import { PostGrid } from "@/components/public/PostGrid";
 import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
-import { getPublishedPosts, getFeaturedPost } from "@/lib/firestore";
+import { getFeaturedPost } from "@/lib/firestore";
 import { Post, PostCategory } from "@/types/post";
 
 function HomeContent() {

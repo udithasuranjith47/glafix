@@ -69,8 +69,10 @@ function AdminLoginContent() {
     if (saved) {
       completeMagicSignIn(saved, window.location.href);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPageState("link-confirm");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function completeMagicSignIn(email: string, link: string) {

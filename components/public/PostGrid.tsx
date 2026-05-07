@@ -44,6 +44,7 @@ export function PostGrid({ category, excludeSlug, pageSize = 9 }: PostGridProps)
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setLastDoc(null);
     setPosts([]);

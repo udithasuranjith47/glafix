@@ -27,7 +27,6 @@ import {
   Image as ImageIcon, Link as LinkIcon, Minus, Highlighter,
   Video, MonitorPlay,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const lowlight = createLowlight(common);
 

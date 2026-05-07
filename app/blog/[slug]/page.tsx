@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import BlogPostContent from "@/components/public/BlogPostContent";
 
 const PROJECT_ID = "glafix-32914";
