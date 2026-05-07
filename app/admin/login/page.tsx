@@ -13,6 +13,8 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  sendPasswordResetEmail,
+  signOut as firebaseSignOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Logo } from "@/components/Logo";
@@ -23,26 +25,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-/* ─── Schemas ──────────────────────────────────────────── */
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "";
 
 const passwordSchema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "At least 6 characters"),
 });
 
-const emailOnlySchema = z.object({
-  email: z.string().email("Enter a valid email"),
-});
-
 type PasswordForm = z.infer<typeof passwordSchema>;
-type EmailOnlyForm = z.infer<typeof emailOnlySchema>;
-
-/* ─── Page state types ─────────────────────────────────── */
-
 type Mode = "password" | "magic";
 type State = "form" | "link-sent" | "link-confirm" | "completing";
-
-/* ─── Component ────────────────────────────────────────── */
 
 export default function AdminLoginPage() {
   const { signIn } = useAuth();
@@ -52,30 +44,15 @@ export default function AdminLoginPage() {
   const [mode, setMode] = useState<Mode>("password");
   const [pageState, setPageState] = useState<State>("form");
   const [showPassword, setShowPassword] = useState(false);
-  const [sentToEmail, setSentToEmail] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
 
-  /* Password form */
   const {
     register: regPwd,
     handleSubmit: handlePwd,
     formState: { errors: errPwd, isSubmitting: submittingPwd },
   } = useForm<PasswordForm>({ resolver: zodResolver(passwordSchema) });
 
-  /* Magic-link "send" form */
-  const {
-    register: regMagic,
-    handleSubmit: handleMagic,
-    formState: { errors: errMagic, isSubmitting: submittingMagic },
-  } = useForm<EmailOnlyForm>({ resolver: zodResolver(emailOnlySchema) });
-
-  /* Magic-link "confirm on different device" form */
-  const {
-    register: regConfirm,
-    handleSubmit: handleConfirm,
-    formState: { errors: errConfirm, isSubmitting: submittingConfirm },
-  } = useForm<EmailOnlyForm>({ resolver: zodResolver(emailOnlySchema) });
-
-  /* ── On load: detect if this is a magic-link callback ── */
+  /* On load: detect magic-link callback */
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isSignInWithEmailLink(auth, window.location.href)) return;
@@ -88,18 +65,33 @@ export default function AdminLoginPage() {
     }
   }, []);
 
-  /* ── Complete magic-link sign-in ────────────────────── */
   async function completeMagicSignIn(email: string, link: string) {
+    /* Block any email that isn't the admin */
+    if (ADMIN_EMAIL && email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      toast.error("This email is not authorised for admin access.");
+      localStorage.removeItem("emailForSignIn");
+      setPageState("form");
+      return;
+    }
+
     setPageState("completing");
     try {
       const credential = await signInWithEmailLink(auth, email, link);
       localStorage.removeItem("emailForSignIn");
+
+      /* Extra safety: if Firebase somehow authed a different email, boot them */
+      if (ADMIN_EMAIL && credential.user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        await firebaseSignOut(auth);
+        toast.error("This account is not authorised.");
+        setPageState("form");
+        return;
+      }
+
       const token = await credential.user.getIdToken();
       const secure = window.location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `__session=${token}; path=/; max-age=3600; SameSite=Strict${secure}`;
       toast.success("Signed in successfully");
-      const redirect = searchParams.get("redirect") ?? "/admin/dashboard";
-      router.push(redirect);
+      router.push(searchParams.get("redirect") ?? "/admin/dashboard");
     } catch {
       toast.error("Link is invalid or expired. Please request a new one.");
       setPageState("form");
@@ -107,8 +99,11 @@ export default function AdminLoginPage() {
     }
   }
 
-  /* ── Password sign-in ───────────────────────────────── */
   async function onPasswordSubmit(data: PasswordForm) {
+    if (ADMIN_EMAIL && data.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      toast.error("This email is not authorised for admin access.");
+      return;
+    }
     try {
       await signIn(data.email, data.password);
       toast.success("Welcome back");
@@ -118,45 +113,45 @@ export default function AdminLoginPage() {
     }
   }
 
-  /* ── Send magic link ────────────────────────────────── */
-  async function onSendLink(data: EmailOnlyForm) {
+  async function sendMagicLink() {
+    if (!ADMIN_EMAIL) return;
     const actionCodeSettings = {
       url: `${window.location.origin}/admin/login`,
       handleCodeInApp: true,
     };
     try {
-      await sendSignInLinkToEmail(auth, data.email, actionCodeSettings);
-      localStorage.setItem("emailForSignIn", data.email);
-      setSentToEmail(data.email);
+      await sendSignInLinkToEmail(auth, ADMIN_EMAIL, actionCodeSettings);
+      localStorage.setItem("emailForSignIn", ADMIN_EMAIL);
       setPageState("link-sent");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("auth/unauthorized-continue-uri") || msg.includes("UNAUTHORIZED_DOMAIN")) {
-        toast.error(
-          "Add this domain to Firebase → Authentication → Settings → Authorized domains."
-        );
-      } else if (msg.includes("CONFIGURATION_NOT_FOUND") || msg.includes("operation-not-allowed")) {
-        toast.error(
-          "Enable 'Email link (passwordless)' in Firebase → Authentication → Sign-in method."
-        );
+        toast.error("Add this domain to Firebase → Authentication → Settings → Authorized domains.");
       } else {
-        toast.error("Failed to send link. Check Firebase console settings.");
+        toast.error("Failed to send link. Check Firebase Console.");
       }
     }
   }
 
-  /* ── Confirm email (different device) ──────────────── */
-  async function onConfirmEmail(data: EmailOnlyForm) {
-    await completeMagicSignIn(data.email, window.location.href);
+  async function sendPasswordReset() {
+    if (!ADMIN_EMAIL) return;
+    setResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, ADMIN_EMAIL);
+      toast.success(`Password reset email sent to ${ADMIN_EMAIL}`);
+    } catch {
+      toast.error("Failed to send reset email. Check Firebase Console.");
+    } finally {
+      setResettingPassword(false);
+    }
   }
 
-  /* ─────────────────────────────────────────────────── */
-  /* Render                                              */
-  /* ─────────────────────────────────────────────────── */
+  async function onConfirmEmail(email: string) {
+    await completeMagicSignIn(email, window.location.href);
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-      {/* Ambient glow */}
       <div
         className="absolute inset-0 -z-10 opacity-[0.04]"
         style={{
@@ -166,7 +161,6 @@ export default function AdminLoginPage() {
       />
 
       <div className="w-full max-w-sm animate-fade-in-up">
-        {/* Brand mark */}
         <div className="flex flex-col items-center mb-10">
           <div className="mb-4">
             <Logo size={48} />
@@ -180,10 +174,9 @@ export default function AdminLoginPage() {
           <p className="text-sm text-muted-foreground mt-1">Admin Access</p>
         </div>
 
-        {/* Card */}
         <div className="bg-card border border-border rounded-2xl shadow-2xl shadow-black/20 overflow-hidden">
 
-          {/* ── COMPLETING ──────────────────────────────── */}
+          {/* COMPLETING */}
           {pageState === "completing" && (
             <div className="p-8 flex flex-col items-center gap-4">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -191,80 +184,50 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          {/* ── LINK SENT ───────────────────────────────── */}
+          {/* LINK SENT */}
           {pageState === "link-sent" && (
             <div className="p-8 text-center space-y-4">
               <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto">
                 <CheckCircle className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground text-lg mb-1">
-                  Check your inbox
-                </h2>
+                <h2 className="font-semibold text-foreground text-lg mb-1">Check your inbox</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  We sent a sign-in link to{" "}
-                  <span className="text-foreground font-medium">{sentToEmail}</span>.
-                  Click the link in the email to sign in — no password needed.
+                  Sent a sign-in link to{" "}
+                  <span className="text-foreground font-medium">{ADMIN_EMAIL}</span>.
+                  Click the link to sign in — no password needed.
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                The link expires in 1 hour.
-              </p>
+              <p className="text-xs text-muted-foreground">The link expires in 1 hour.</p>
               <Button
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground gap-1.5"
-                onClick={() => { setPageState("form"); setMode("magic"); }}
+                onClick={() => { setPageState("form"); setMode("password"); }}
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Use a different email
+                Back to login
               </Button>
             </div>
           )}
 
-          {/* ── LINK CONFIRM (different device) ─────────── */}
+          {/* LINK CONFIRM (different device) */}
           {pageState === "link-confirm" && (
             <div className="p-8 space-y-5">
               <div>
                 <h2 className="font-semibold text-foreground mb-1">Confirm your email</h2>
                 <p className="text-sm text-muted-foreground">
-                  Looks like you opened the link on a different device. Enter the
-                  email you used to request the link.
+                  Looks like you opened the link on a different device.
+                  Enter the admin email to complete sign-in.
                 </p>
               </div>
-              <form onSubmit={handleConfirm(onConfirmEmail)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-email" className="text-sm font-medium">
-                    Email
-                  </Label>
-                  <Input
-                    id="confirm-email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Enter your email"
-                    {...regConfirm("email")}
-                    className="bg-muted/20 border-border focus:border-primary/50"
-                  />
-                  {errConfirm.email && (
-                    <p className="text-destructive text-xs">{errConfirm.email.message}</p>
-                  )}
-                </div>
-                <Button
-                  type="submit"
-                  disabled={submittingConfirm}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {submittingConfirm && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Complete Sign In
-                </Button>
-              </form>
+              <ConfirmForm onConfirm={onConfirmEmail} />
             </div>
           )}
 
-          {/* ── FORM (password / magic) ──────────────────── */}
+          {/* FORM */}
           {pageState === "form" && (
             <>
-              {/* Mode tabs */}
               <div className="grid grid-cols-2 border-b border-border">
                 <button
                   type="button"
@@ -295,7 +258,6 @@ export default function AdminLoginPage() {
               </div>
 
               <div className="p-8">
-                {/* PASSWORD form */}
                 {mode === "password" && (
                   <form onSubmit={handlePwd(onPasswordSubmit)} className="space-y-5">
                     <div className="space-y-2">
@@ -345,44 +307,37 @@ export default function AdminLoginPage() {
                       {submittingPwd && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                       Sign In
                     </Button>
+
+                    {/* Forgot password */}
+                    <div className="text-center pt-1">
+                      <button
+                        type="button"
+                        onClick={sendPasswordReset}
+                        disabled={resettingPassword}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {resettingPassword ? "Sending reset email…" : "Forgot password? Send reset email"}
+                      </button>
+                    </div>
                   </form>
                 )}
 
-                {/* MAGIC LINK form */}
                 {mode === "magic" && (
-                  <form onSubmit={handleMagic(onSendLink)} className="space-y-5">
+                  <div className="space-y-5">
                     <p className="text-sm text-muted-foreground leading-relaxed -mt-1">
-                      Enter your email and we&apos;ll send a one-click sign-in link.
-                      No password required.
+                      Send a one-click sign-in link to your admin email. No password needed.
                     </p>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="magic-email" className="text-sm font-medium">Email</Label>
-                      <Input
-                        id="magic-email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="Enter your email"
-                        {...regMagic("email")}
-                        className="bg-muted/20 border-border focus:border-primary/50"
-                      />
-                      {errMagic.email && (
-                        <p className="text-destructive text-xs">{errMagic.email.message}</p>
-                      )}
+                    <div className="p-3 rounded-lg bg-muted/20 border border-border text-sm text-foreground font-mono">
+                      {ADMIN_EMAIL || "No admin email configured"}
                     </div>
-
                     <Button
-                      type="submit"
-                      disabled={submittingMagic}
+                      onClick={sendMagicLink}
                       className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
                     >
-                      {submittingMagic
-                        ? <Loader2 className="w-4 h-4 animate-spin" />
-                        : <Mail className="w-4 h-4" />
-                      }
-                      {submittingMagic ? "Sending…" : "Send Magic Link"}
+                      <Mail className="w-4 h-4" />
+                      Send Magic Link
                     </Button>
-                  </form>
+                  </div>
                 )}
               </div>
             </>
@@ -390,5 +345,38 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ConfirmForm({ onConfirm }: { onConfirm: (email: string) => void }) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handle(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    await onConfirm(email);
+    setLoading(false);
+  }
+
+  return (
+    <form onSubmit={handle} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="confirm-email" className="text-sm font-medium">Email</Label>
+        <Input
+          id="confirm-email"
+          type="email"
+          autoComplete="email"
+          placeholder="Enter your admin email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="bg-muted/20 border-border focus:border-primary/50"
+        />
+      </div>
+      <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Complete Sign In
+      </Button>
+    </form>
   );
 }

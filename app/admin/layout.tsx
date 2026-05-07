@@ -6,16 +6,25 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "";
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user && pathname !== "/admin/login") {
+    if (loading) return;
+    if (pathname === "/admin/login") return;
+    if (!user) {
       router.replace("/admin/login");
+      return;
     }
-  }, [user, loading, router, pathname]);
+    // Boot any account that isn't the authorised admin email
+    if (ADMIN_EMAIL && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      signOut();
+    }
+  }, [user, loading, router, pathname, signOut]);
 
   if (loading) {
     return (
@@ -25,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user && pathname !== "/admin/login") return null;
+  if ((!user || (ADMIN_EMAIL && user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase())) && pathname !== "/admin/login") return null;
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
