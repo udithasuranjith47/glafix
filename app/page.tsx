@@ -50,8 +50,8 @@ function CitedByStrip() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
             &ldquo;We test every tool with our own money before recommending it. When you buy through
-            our links we earn a commission — that&apos;s how we keep the lights on. We never recommend
-            something we would not use ourselves.&rdquo;{" "}
+            our links we earn a commission at no cost to you — that&apos;s how we keep the lights on.
+            We never recommend something we would not use ourselves.&rdquo;{" "}
             <Link href="/disclosure" className="underline underline-offset-2 hover:text-primary transition-colors">
               Full disclosure →
             </Link>
