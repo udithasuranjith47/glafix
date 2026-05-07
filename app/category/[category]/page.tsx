@@ -1,7 +1,5 @@
-"use client";
-
-import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { PostGrid } from "@/components/public/PostGrid";
@@ -26,42 +24,39 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   News: "What's happening in the high-ticket AI SaaS landscape right now.",
 };
 
-export default function CategoryPage() {
-  const { category: rawCategory } = useParams<{ category: string }>();
-  const category = decodeURIComponent(rawCategory) as PostCategory;
-  const isValid = VALID_CATEGORIES.includes(category);
+type Props = { params: Promise<{ category: string }> };
 
-  useEffect(() => {
-    if (isValid) {
-      document.title = `${category} | Glafix`;
-    }
-  }, [category, isValid]);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { category: raw } = await params;
+  const category = decodeURIComponent(raw);
+  const description = CATEGORY_DESCRIPTIONS[category];
 
-  if (!isValid) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center text-center px-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
-              Unknown Category
-            </h1>
-            <Link href="/" className="text-primary hover:underline text-sm">
-              ← Back to Home
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  if (!description) return { title: "Category Not Found" };
+
+  return {
+    title: `${category} | Glafix`,
+    description,
+    openGraph: {
+      title: `${category} — Glafix`,
+      description,
+      type: "website",
+      siteName: "Glafix",
+    },
+    twitter: { card: "summary", title: `${category} — Glafix`, description },
+  };
+}
+
+export default async function CategoryPage({ params }: Props) {
+  const { category: raw } = await params;
+  const category = decodeURIComponent(raw) as PostCategory;
+
+  if (!VALID_CATEGORIES.includes(category)) notFound();
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="pt-32 pb-12 animate-fade-in-up">
           <Link
             href="/"
@@ -91,10 +86,8 @@ export default function CategoryPage() {
           )}
         </div>
 
-        {/* Separator */}
         <div className="h-px bg-border mb-12" />
 
-        {/* Grid */}
         <div className="pb-24">
           <PostGrid category={category} pageSize={9} />
         </div>
