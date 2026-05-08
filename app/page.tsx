@@ -12,7 +12,7 @@ import { PostGrid } from "@/components/public/PostGrid";
 import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
 import { getFeaturedPost, getHomepageConfig, getPostsByIds } from "@/lib/firestore";
 import { NewsletterForm } from "@/components/public/NewsletterForm";
-import { Post, PostCategory } from "@/types/post";
+import { Post, PostCategory, CategoryGroup, GROUP_CATEGORY_MAP } from "@/types/post";
 
 /* ─── Trust / Cited-By strip ─────────────────────────────────── */
 
@@ -176,11 +176,24 @@ function TopPicks({ posts }: { posts: Post[] }) {
 /* ─── Pillar Grid (dynamic) ─────────────────────────────────────── */
 
 const CATEGORY_ICONS: Record<string, string> = {
-  Reviews: "⭐",
-  Tutorials: "📚",
-  "Case Studies": "🏗️",
-  Tools: "🔗",
-  News: "📣",
+  "Tool Review":      "⭐",
+  "Comparison":       "⚖️",
+  "Best Of":          "🏆",
+  "Tutorial":         "📚",
+  "Pricing & Value":  "💰",
+  "Alternatives":     "🔄",
+  "By Industry":      "🏭",
+  "By Role":          "👤",
+  "By Task":          "🔧",
+  "Prompting Guide":  "💬",
+  "Automation":       "⚡",
+  "AI News":          "📣",
+  "Statistics":       "📊",
+  "Case Study":       "🏗️",
+  "Beginner Guide":   "🎓",
+  "AI vs Human":      "🤖",
+  "Free Resources":   "🎁",
+  "Content Creation": "✍️",
 };
 
 function PillarGrid({ posts }: { posts: Post[] }) {
@@ -354,7 +367,9 @@ function HomeContent() {
 
   const activeCategory = category ?? "All";
   const gridCategory =
-    category && category !== "All" ? (category as PostCategory) : undefined;
+    category && category !== "All"
+      ? (GROUP_CATEGORY_MAP[category as CategoryGroup] ?? (category as PostCategory))
+      : undefined;
 
   return (
     <div className="min-h-screen bg-background">

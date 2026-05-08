@@ -109,14 +109,18 @@ export async function getPublishedPosts(
 }
 
 export async function getPublishedPostsByCategory(
-  category: PostCategory,
+  category: PostCategory | PostCategory[],
   pageSize = 9,
   lastDoc?: QueryDocumentSnapshot
 ): Promise<{ posts: Post[]; lastDoc: QueryDocumentSnapshot | null }> {
+  const categoryFilter = Array.isArray(category)
+    ? where("category", "in", category)
+    : where("category", "==", category);
+
   let q = query(
     collection(db, POSTS_COLLECTION),
     where("status", "==", "published"),
-    where("category", "==", category),
+    categoryFilter,
     orderBy("publishedAt", "desc"),
     limit(pageSize)
   );
@@ -125,7 +129,7 @@ export async function getPublishedPostsByCategory(
     q = query(
       collection(db, POSTS_COLLECTION),
       where("status", "==", "published"),
-      where("category", "==", category),
+      categoryFilter,
       orderBy("publishedAt", "desc"),
       startAfter(lastDoc),
       limit(pageSize)
@@ -158,14 +162,18 @@ export async function getPostById(id: string): Promise<Post | null> {
 }
 
 export async function getRelatedPosts(
-  category: PostCategory,
+  category: PostCategory | PostCategory[],
   excludeSlug: string,
   count = 3
 ): Promise<Post[]> {
+  const categoryFilter = Array.isArray(category)
+    ? where("category", "in", category)
+    : where("category", "==", category);
+
   const q = query(
     collection(db, POSTS_COLLECTION),
     where("status", "==", "published"),
-    where("category", "==", category),
+    categoryFilter,
     orderBy("publishedAt", "desc"),
     limit(count + 1)
   );

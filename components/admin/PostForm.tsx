@@ -13,17 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { ImageUploader } from "./ImageUploader";
-import { Post, PostCategory } from "@/types/post";
+import { Post, PostCategory, CATEGORY_GROUPS, ALL_CATEGORY_VALUES } from "@/types/post";
 import { createPost, updatePost } from "@/lib/firestore";
 import { slugify } from "@/lib/utils";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -33,12 +26,10 @@ const RichTextEditor = dynamic(
   { ssr: false, loading: () => <div className="border border-border rounded-xl h-96 bg-muted/10 animate-pulse" /> }
 );
 
-const CATEGORIES: PostCategory[] = ["Reviews", "Tutorials", "Case Studies", "Tools", "News"];
-
 const schema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required"),
-  category: z.enum(["Reviews", "Tutorials", "Case Studies", "Tools", "News"]),
+  category: z.enum(ALL_CATEGORY_VALUES),
   status: z.enum(["draft", "published"]),
   excerpt: z.string().max(160, "Max 160 characters"),
   featuredImage: z.string(),
@@ -95,7 +86,7 @@ export function PostForm({ post }: PostFormProps) {
     defaultValues: {
       title: post?.title ?? "",
       slug: post?.slug ?? "",
-      category: post?.category ?? "Reviews",
+      category: post?.category ?? "Tool Review",
       status: post?.status ?? "draft",
       excerpt: post?.excerpt ?? "",
       featuredImage: post?.featuredImage ?? "",
@@ -211,24 +202,45 @@ export function PostForm({ post }: PostFormProps) {
 
       <div className="grid sm:grid-cols-2 gap-6">
         {/* Category */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Category</Label>
+        <div className="space-y-3 sm:col-span-2">
+          <Label className="text-sm font-medium">Content Type</Label>
           <Controller
             name="category"
             control={control}
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="bg-muted/20 border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-4">
+                {CATEGORY_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${group.dotClass}`} />
+                      <span className={`text-xs font-semibold uppercase tracking-widest ${group.colorClass}`}>
+                        {group.label}
+                      </span>
+                      <span className="text-xs text-muted-foreground/60 ml-1">— {group.hint}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pl-4">
+                      {group.categories.map((cat) => {
+                        const isSelected = field.value === cat.value;
+                        return (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => field.onChange(cat.value)}
+                            className={`flex flex-col items-start px-3 py-2 rounded-lg border text-left transition-all duration-150 min-w-[130px] ${
+                              isSelected
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-muted/10 text-muted-foreground hover:border-border/80 hover:bg-muted/20 hover:text-foreground"
+                            }`}
+                          >
+                            <span className="text-xs font-semibold">{cat.value}</span>
+                            <span className="text-[10px] opacity-70 mt-0.5 leading-tight">{cat.hint}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           />
         </div>

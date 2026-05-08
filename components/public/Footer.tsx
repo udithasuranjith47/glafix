@@ -37,11 +37,11 @@ export function Footer() {
             </h4>
             <ul className="space-y-2.5">
               {[
-                { label: "Reviews", href: "/category/Reviews" },
-                { label: "Tutorials", href: "/category/Tutorials" },
-                { label: "Case Studies", href: "/category/Case%20Studies" },
-                { label: "Tools", href: "/category/Tools" },
-                { label: "News", href: "/category/News" },
+                { label: "Reviews",        href: "/category/Reviews" },
+                { label: "Roundups",       href: "/category/Roundups" },
+                { label: "How-To",         href: "/category/How-To" },
+                { label: "Pricing & News", href: "/category/Pricing%20%26%20News" },
+                { label: "Case Studies",   href: "/category/Case%20Studies" },
               ].map(({ label, href }) => (
                 <li key={href}>
                   <Link

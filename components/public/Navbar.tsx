@@ -8,9 +8,9 @@ import { SearchBar } from "@/components/public/SearchBar";
 
 const navLinks = [
   { label: "AI Stack 2026", href: "/best-ai-tools-2026", highlight: true },
-  { label: "Reviews", href: "/category/Reviews" },
-  { label: "Tutorials", href: "/category/Tutorials" },
-  { label: "Tools", href: "/category/Tools" },
+  { label: "Reviews",  href: "/category/Reviews" },
+  { label: "How-To",   href: "/category/How-To" },
+  { label: "Roundups", href: "/category/Roundups" },
 ];
 
 export function Navbar() {

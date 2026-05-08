@@ -11,7 +11,7 @@ import { RelatedPosts } from "@/components/public/RelatedPosts";
 import { ShareButtons } from "@/components/public/ShareButtons";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Post } from "@/types/post";
+import { Post, CATEGORY_GROUP_MAP, GROUP_CATEGORY_MAP } from "@/types/post";
 import { getPostBySlug, getRelatedPosts } from "@/lib/firestore";
 import { formatDate, extractHeadings, injectHeadingIds } from "@/lib/utils";
 import { Clock, Calendar } from "lucide-react";
@@ -31,7 +31,9 @@ export default function BlogPostContent({ slug }: { slug: string }) {
           return;
         }
         setPost(fetchedPost);
-        const relatedPosts = await getRelatedPosts(fetchedPost.category, slug, 3);
+        const group = CATEGORY_GROUP_MAP[fetchedPost.category];
+        const groupCategories = group ? GROUP_CATEGORY_MAP[group] : [fetchedPost.category];
+        const relatedPosts = await getRelatedPosts(groupCategories, slug, 3);
         setRelated(relatedPosts);
       } catch {
         setNotFoundState(true);

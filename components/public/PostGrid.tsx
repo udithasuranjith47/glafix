@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface PostGridProps {
-  category?: PostCategory;
+  category?: PostCategory | PostCategory[];
   excludeSlug?: string;
   pageSize?: number;
 }

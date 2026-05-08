@@ -4,53 +4,69 @@ import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { PostGrid } from "@/components/public/PostGrid";
 import { Badge } from "@/components/ui/badge";
-import { PostCategory } from "@/types/post";
+import { CategoryGroup, CATEGORY_GROUPS, GROUP_CATEGORY_MAP } from "@/types/post";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-const VALID_CATEGORIES: PostCategory[] = [
-  "Reviews",
-  "Tutorials",
-  "Case Studies",
-  "Tools",
-  "News",
-];
-
-const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  Reviews: "In-depth breakdowns of high-ticket AI SaaS tools — ROI, features, and verdict.",
-  Tutorials: "Step-by-step guides to building, integrating, and scaling AI-powered workflows.",
-  "Case Studies": "Real stories of operators deploying AI SaaS at scale with measurable results.",
-  Tools: "Curated spotlights on AI tools worth your attention and budget.",
-  News: "What's happening in the high-ticket AI SaaS landscape right now.",
+const GROUP_META: Record<CategoryGroup, { description: string; headline: string }> = {
+  Reviews: {
+    headline: "Reviews & Comparisons",
+    description:
+      "In-depth tool reviews, head-to-head comparisons, and honest alternatives — for buyers who need a clear answer.",
+  },
+  Roundups: {
+    headline: "Best Of & Roundups",
+    description:
+      "Curated lists of the best AI tools by use case, industry, role, and task. High traffic, highly shareable.",
+  },
+  "How-To": {
+    headline: "How-To & Guides",
+    description:
+      "Step-by-step tutorials, prompting guides, automation workflows, and beginner explainers — built for operators.",
+  },
+  "Pricing & News": {
+    headline: "Pricing & News",
+    description:
+      "Every pricing plan explained, plus the AI news and statistics that actually matter for running a business.",
+  },
+  "Case Studies": {
+    headline: "Case Studies & Real Results",
+    description:
+      "First-person data: real tools, real money, real outcomes — so you can make decisions based on evidence.",
+  },
 };
+
+const VALID_GROUPS = CATEGORY_GROUPS.map((g) => g.label);
 
 type Props = { params: Promise<{ category: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { category: raw } = await params;
-  const category = decodeURIComponent(raw);
-  const description = CATEGORY_DESCRIPTIONS[category];
-
-  if (!description) return { title: "Category Not Found" };
+  const group = decodeURIComponent(raw) as CategoryGroup;
+  const meta = GROUP_META[group];
+  if (!meta) return { title: "Category Not Found" };
 
   return {
-    title: { absolute: `${category} | Glafix` },
-    description,
+    title: { absolute: `${meta.headline} | Glafix` },
+    description: meta.description,
     openGraph: {
-      title: `${category} — Glafix`,
-      description,
+      title: `${meta.headline} — Glafix`,
+      description: meta.description,
       type: "website",
       siteName: "Glafix",
     },
-    twitter: { card: "summary", title: `${category} — Glafix`, description },
+    twitter: { card: "summary", title: `${meta.headline} — Glafix`, description: meta.description },
   };
 }
 
 export default async function CategoryPage({ params }: Props) {
   const { category: raw } = await params;
-  const category = decodeURIComponent(raw) as PostCategory;
+  const group = decodeURIComponent(raw) as CategoryGroup;
 
-  if (!VALID_CATEGORIES.includes(category)) notFound();
+  if (!VALID_GROUPS.includes(group)) notFound();
+
+  const meta = GROUP_META[group];
+  const categories = GROUP_CATEGORY_MAP[group];
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,19 +93,29 @@ export default async function CategoryPage({ params }: Props) {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
-            {category}
+            {meta.headline}
           </h1>
-          {CATEGORY_DESCRIPTIONS[category] && (
-            <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
-              {CATEGORY_DESCRIPTIONS[category]}
-            </p>
-          )}
+          <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
+            {meta.description}
+          </p>
+
+          {/* Sub-type chips */}
+          <div className="flex flex-wrap gap-2 mt-6">
+            {categories.map((cat) => (
+              <span
+                key={cat}
+                className="text-xs px-3 py-1 rounded-full border border-border text-muted-foreground bg-muted/20"
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="h-px bg-border mb-12" />
 
         <div className="pb-24">
-          <PostGrid category={category} pageSize={9} />
+          <PostGrid category={categories} pageSize={9} />
         </div>
       </main>
 

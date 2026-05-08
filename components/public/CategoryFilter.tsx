@@ -2,19 +2,27 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { CategoryGroup } from "@/types/post";
 
-const CATEGORIES = ["All", "Reviews", "Tutorials", "Case Studies", "Tools", "News"] as const;
+const GROUPS: { label: string; value: string }[] = [
+  { label: "All",            value: "All" },
+  { label: "Reviews",        value: "Reviews" },
+  { label: "Roundups",       value: "Roundups" },
+  { label: "How-To",         value: "How-To" },
+  { label: "Pricing & News", value: "Pricing & News" },
+  { label: "Case Studies",   value: "Case Studies" },
+];
 
 export function CategoryFilter({ activeCategory = "All" }: { activeCategory?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function handleSelect(cat: string) {
+  function handleSelect(value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (cat === "All") {
+    if (value === "All") {
       params.delete("category");
     } else {
-      params.set("category", cat);
+      params.set("category", value);
     }
     params.delete("page");
     router.push(`/?${params.toString()}`);
@@ -22,12 +30,12 @@ export function CategoryFilter({ activeCategory = "All" }: { activeCategory?: st
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {CATEGORIES.map((cat) => {
-        const isActive = cat === activeCategory;
+      {GROUPS.map(({ label, value }) => {
+        const isActive = value === activeCategory;
         return (
           <button
-            key={cat}
-            onClick={() => handleSelect(cat)}
+            key={value}
+            onClick={() => handleSelect(value)}
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200",
               isActive
@@ -35,7 +43,7 @@ export function CategoryFilter({ activeCategory = "All" }: { activeCategory?: st
                 : "bg-muted text-muted-foreground hover:text-foreground hover:bg-secondary"
             )}
           >
-            {cat}
+            {label}
           </button>
         );
       })}
