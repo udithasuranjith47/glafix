@@ -9,7 +9,6 @@ import { Footer } from "@/components/public/Footer";
 import { HeroSection } from "@/components/public/HeroSection";
 import { CategoryFilter } from "@/components/public/CategoryFilter";
 import { PostGrid } from "@/components/public/PostGrid";
-import { HeroSkeleton } from "@/components/public/LoadingSkeleton";
 import { getFeaturedPost, getHomepageConfig, getPostsByIds } from "@/lib/firestore";
 import { NewsletterForm } from "@/components/public/NewsletterForm";
 import { Post, PostCategory, CategoryGroup, GROUP_CATEGORY_MAP } from "@/types/post";
@@ -343,15 +342,15 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
   const [featuredPost, setFeaturedPost] = useState<Post | null>(null);
-  const [heroLoading, setHeroLoading] = useState(true);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
   const [topPickPosts, setTopPickPosts] = useState<Post[]>([]);
   const [pillarPosts, setPillarPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     getFeaturedPost()
       .then((post) => setFeaturedPost(post))
-      .catch(() => setFeaturedPost(null))
-      .finally(() => setHeroLoading(false));
+      .catch(() => {})
+      .finally(() => setFeaturedLoading(false));
   }, []);
 
   useEffect(() => {
@@ -375,14 +374,8 @@ function HomeContent() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* 1. Hero */}
-      {heroLoading ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
-          <HeroSkeleton />
-        </div>
-      ) : (
-        <HeroSection featuredPost={featuredPost} />
-      )}
+      {/* 1. Hero — renders heading/CTA immediately, featured card fades in */}
+      <HeroSection featuredPost={featuredPost} featuredLoading={featuredLoading} />
 
       {/* 2. Cited-By strip */}
       <CitedByStrip />

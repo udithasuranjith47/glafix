@@ -9,9 +9,10 @@ import { formatDate } from "@/lib/utils";
 
 interface HeroSectionProps {
   featuredPost: Post | null;
+  featuredLoading?: boolean;
 }
 
-export function HeroSection({ featuredPost }: HeroSectionProps) {
+export function HeroSection({ featuredPost, featuredLoading = false }: HeroSectionProps) {
   return (
     <section className="relative pt-32 pb-16 lg:pt-44 lg:pb-20 overflow-hidden">
       {/* Background grid */}
@@ -71,8 +72,10 @@ export function HeroSection({ featuredPost }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Featured post card */}
-        {featuredPost && (
+        {/* Featured post card — space reserved while loading to prevent CLS */}
+        {featuredLoading ? (
+          <div className="mt-16 h-[420px] lg:h-[460px] rounded-xl bg-muted/10 border border-border/40 animate-pulse" />
+        ) : featuredPost ? (
           <div className="mt-16 animate-fade-in-up animation-delay-200">
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-6 h-px bg-primary/40" />
@@ -127,7 +130,7 @@ export function HeroSection({ featuredPost }: HeroSectionProps) {
               </div>
             </Link>
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
