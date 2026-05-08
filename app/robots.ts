@@ -9,7 +9,10 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin/", "/api/"],
       },
     ],
-    sitemap: "https://glafix.com/sitemap.xml",
+    sitemap: [
+      "https://glafix.com/sitemap.xml",
+      "https://glafix.com/news-sitemap.xml",
+    ],
     host: "https://glafix.com",
   };
 }

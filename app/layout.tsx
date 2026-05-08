@@ -54,6 +54,43 @@ export const metadata: Metadata = {
   },
 };
 
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://glafix.com/#website",
+      url: "https://glafix.com",
+      name: "Glafix",
+      description:
+        "Hand-tested AI tool reviews, comparisons, and how-to guides for one-person businesses.",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: "https://glafix.com/?q={search_term_string}" },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://glafix.com/#organization",
+      name: "Glafix",
+      url: "https://glafix.com",
+      logo: {
+        "@type": "ImageObject",
+        "@id": "https://glafix.com/#logo",
+        url: "https://glafix.com/icon.png",
+        width: 200,
+        height: 200,
+        caption: "Glafix",
+      },
+      description:
+        "Independent AI tool reviews and comparisons tested with real money on real projects.",
+      foundingDate: "2025",
+      knowsAbout: ["Artificial Intelligence", "AI Tools", "SaaS", "Small Business Software"],
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -65,6 +102,10 @@ export default function RootLayout({
       className={`dark ${playfair.variable} ${dmSans.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
         <PageViewTracker />
         {children}
         <Toaster
