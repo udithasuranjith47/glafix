@@ -23,19 +23,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://glafix.com"),
   title: {
-    default: "Glafix — High-Ticket AI SaaS",
+    default: "Glafix — Best AI Tools for One-Person Businesses",
     template: "%s | Glafix",
   },
   description:
-    "Deep analysis, reviews, and tutorials on high-ticket AI SaaS products. Built for founders, operators, and investors.",
+    "Hand-tested AI tool reviews, comparisons, and how-to guides. Find the right AI stack for your business — tested with real money, real projects.",
+  keywords: [
+    "AI tools", "AI tool reviews", "best AI tools 2026", "AI for small business",
+    "AI software comparison", "no-code AI", "AI SaaS reviews",
+  ],
+  authors: [{ name: "Glafix" }],
+  creator: "Glafix",
+  publisher: "Glafix",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" },
+  },
   openGraph: {
     siteName: "Glafix",
     type: "website",
     locale: "en_US",
+    url: "https://glafix.com",
   },
   twitter: {
     card: "summary_large_image",
+    site: "@glafix",
   },
 };
 
