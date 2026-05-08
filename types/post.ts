@@ -125,9 +125,9 @@ export interface Post {
   readTime: number;
   seoTitle: string;
   seoDescription: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  publishedAt: Timestamp | null;
+  createdAt: Timestamp | null;
+  updatedAt: Timestamp | null;
+  publishedAt: Timestamp | string | null;
 }
 
 export type PostFormData = Omit<Post, "id" | "createdAt" | "updatedAt" | "publishedAt" | "readTime" | "featured">;

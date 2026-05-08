@@ -22,19 +22,21 @@ export function calculateReadTime(html: string): number {
   return Math.max(1, Math.ceil(wordCount / 200));
 }
 
-export function formatDate(timestamp: Timestamp | null | undefined): string {
+export function formatDate(timestamp: Timestamp | string | null | undefined): string {
   if (!timestamp) return "";
   try {
-    return format(timestamp.toDate(), "MMMM d, yyyy");
+    const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp.toDate();
+    return format(date, "MMMM d, yyyy");
   } catch {
     return "";
   }
 }
 
-export function formatRelativeDate(timestamp: Timestamp | null | undefined): string {
+export function formatRelativeDate(timestamp: Timestamp | string | null | undefined): string {
   if (!timestamp) return "";
   try {
-    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true });
+    const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp.toDate();
+    return formatDistanceToNow(date, { addSuffix: true });
   } catch {
     return "";
   }

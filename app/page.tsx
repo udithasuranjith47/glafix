@@ -1,19 +1,107 @@
-"use client";
-
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle, ShieldCheck, FlaskConical, Star } from "lucide-react";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { HeroSection } from "@/components/public/HeroSection";
-import { CategoryFilter } from "@/components/public/CategoryFilter";
-import { PostGrid } from "@/components/public/PostGrid";
-import { getFeaturedPost, getHomepageConfig, getPostsByIds } from "@/lib/firestore";
 import { NewsletterForm } from "@/components/public/NewsletterForm";
-import { Post, PostCategory, CategoryGroup, GROUP_CATEGORY_MAP } from "@/types/post";
+import HomeClient from "./HomeClient";
+import { Post, PostCategory } from "@/types/post";
 
-/* ─── Trust / Cited-By strip ─────────────────────────────────── */
+/* ─── Server-side featured post fetch ───────────────────────── */
+
+const PROJECT_ID = "glafix-32914";
+const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+async function fetchFeaturedPost(): Promise<Post | null> {
+  try {
+    const res = await fetch(`${FIRESTORE_BASE}:runQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "posts" }],
+          where: {
+            compositeFilter: {
+              op: "AND",
+              filters: [
+                {
+                  fieldFilter: {
+                    field: { fieldPath: "featured" },
+                    op: "EQUAL",
+                    value: { booleanValue: true },
+                  },
+                },
+                {
+                  fieldFilter: {
+                    field: { fieldPath: "status" },
+                    op: "EQUAL",
+                    value: { stringValue: "published" },
+                  },
+                },
+              ],
+            },
+          },
+          select: {
+            fields: [
+              { fieldPath: "title" },
+              { fieldPath: "slug" },
+              { fieldPath: "excerpt" },
+              { fieldPath: "category" },
+              { fieldPath: "featuredImage" },
+              { fieldPath: "publishedAt" },
+              { fieldPath: "readTime" },
+            ],
+          },
+          limit: 1,
+        },
+      }),
+      next: { revalidate: 300 },
+    });
+
+    if (!res.ok) return null;
+
+    type FirestoreValue = {
+      stringValue?: string;
+      timestampValue?: string;
+      integerValue?: string;
+      doubleValue?: string;
+    };
+    const rows: Array<{
+      document?: { name: string; fields: Record<string, FirestoreValue> };
+    }> = await res.json();
+
+    const doc = rows[0]?.document;
+    if (!doc) return null;
+
+    const f = doc.fields;
+    const str = (k: string) => f[k]?.stringValue ?? "";
+    const ts = (k: string) => f[k]?.timestampValue ?? f[k]?.stringValue ?? "";
+    const num = (k: string) =>
+      parseInt(f[k]?.integerValue ?? f[k]?.doubleValue ?? "1", 10);
+
+    return {
+      id: doc.name.split("/").pop() ?? "",
+      title: str("title"),
+      slug: str("slug"),
+      excerpt: str("excerpt"),
+      category: str("category") as PostCategory,
+      featuredImage: str("featuredImage"),
+      publishedAt: ts("publishedAt"),
+      readTime: num("readTime"),
+      status: "published",
+      featured: true,
+      content: "",
+      seoTitle: "",
+      seoDescription: "",
+      createdAt: null,
+      updatedAt: null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/* ─── Static sections ────────────────────────────────────────── */
 
 const AI_ENGINES = [
   { name: "Perplexity AI", glyph: "P" },
@@ -26,7 +114,6 @@ const AI_ENGINES = [
 function CitedByStrip() {
   return (
     <div className="border-y border-border/50 bg-card/30">
-      {/* Cited-by row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
           <span className="text-xs text-muted-foreground uppercase tracking-widest shrink-0">
@@ -45,14 +132,16 @@ function CitedByStrip() {
           ))}
         </div>
       </div>
-      {/* Trust statement row */}
       <div className="border-t border-border/40 bg-muted/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
             &ldquo;We test every tool with our own money before recommending it. When you buy through
             our links we earn a commission at no cost to you — that&apos;s how we keep the lights on.
             We never recommend something we would not use ourselves.&rdquo;{" "}
-            <Link href="/disclosure" className="underline underline-offset-2 hover:text-primary transition-colors">
+            <Link
+              href="/disclosure"
+              className="underline underline-offset-2 hover:text-primary transition-colors"
+            >
               Full disclosure →
             </Link>
           </p>
@@ -61,8 +150,6 @@ function CitedByStrip() {
     </div>
   );
 }
-
-/* ─── Newsletter Signup ──────────────────────────────────────── */
 
 function NewsletterSignup() {
   return (
@@ -86,8 +173,6 @@ function NewsletterSignup() {
     </section>
   );
 }
-
-/* ─── About Strip ────────────────────────────────────────────── */
 
 function AboutStrip() {
   return (
@@ -114,140 +199,6 @@ function AboutStrip() {
   );
 }
 
-/* ─── Top Picks (dynamic) ─────────────────────────────────────── */
-
-function TopPicks({ posts }: { posts: Post[] }) {
-  if (!posts.length) return null;
-
-  return (
-    <section className="py-20 bg-muted/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <p className="text-primary text-xs font-semibold uppercase tracking-[0.2em] mb-2">
-              Editor&apos;s Top Picks
-            </p>
-            <h2
-              className="text-3xl sm:text-4xl font-bold text-foreground"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              Top Picks 2026
-            </h2>
-          </div>
-          <Link
-            href="/best-ai-tools-2026"
-            className="hidden sm:inline-flex items-center gap-2 text-sm text-primary hover:gap-3 transition-all"
-          >
-            See full stack <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {posts.map((post) => (
-            <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
-              <div className="h-full bg-card border border-border rounded-xl p-6 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-primary border border-primary/30 rounded px-2 py-0.5 mb-4">
-                  {post.category}
-                </span>
-                <h3
-                  className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors"
-                  style={{ fontFamily: "var(--font-playfair)" }}
-                >
-                  {post.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                  {post.excerpt}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground/60">{post.readTime} min read</span>
-                  <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Pillar Grid (dynamic) ─────────────────────────────────────── */
-
-const CATEGORY_ICONS: Record<string, string> = {
-  "Tool Review":      "⭐",
-  "Comparison":       "⚖️",
-  "Best Of":          "🏆",
-  "Tutorial":         "📚",
-  "Pricing & Value":  "💰",
-  "Alternatives":     "🔄",
-  "By Industry":      "🏭",
-  "By Role":          "👤",
-  "By Task":          "🔧",
-  "Prompting Guide":  "💬",
-  "Automation":       "⚡",
-  "AI News":          "📣",
-  "Statistics":       "📊",
-  "Case Study":       "🏗️",
-  "Beginner Guide":   "🎓",
-  "AI vs Human":      "🤖",
-  "Free Resources":   "🎁",
-  "Content Creation": "✍️",
-};
-
-function PillarGrid({ posts }: { posts: Post[] }) {
-  if (!posts.length) return null;
-
-  return (
-    <section className="py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
-          <p className="text-primary text-xs font-semibold uppercase tracking-[0.2em] mb-2">
-            Evergreen Comparisons
-          </p>
-          <h2
-            className="text-3xl sm:text-4xl font-bold text-foreground"
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
-            The Money Pages
-          </h2>
-          <p className="text-muted-foreground mt-2 max-w-xl">
-            Deep comparison posts built for operators who have already decided to buy — they just
-            need to know which one.
-          </p>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {posts.map((post, i) => (
-            <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
-              <div className="h-full bg-card border border-border rounded-xl p-5 hover:border-primary/40 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 flex gap-4">
-                <span className="text-2xl shrink-0 mt-0.5">
-                  {CATEGORY_ICONS[post.category] ?? "📄"}
-                </span>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {post.title}
-                    </h3>
-                    {i === 0 && (
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-background bg-primary rounded px-1.5 py-0.5">
-                        Hot
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{post.excerpt}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Why Trust Us ───────────────────────────────────────────── */
-
 const TRUST_SIGNALS = [
   {
     icon: FlaskConical,
@@ -257,7 +208,8 @@ const TRUST_SIGNALS = [
   {
     icon: ShieldCheck,
     label: "Disclosed affiliates only",
-    detail: "We only promote tools we'd pay for ourselves. Affiliate relationships are always disclosed.",
+    detail:
+      "We only promote tools we'd pay for ourselves. Affiliate relationships are always disclosed.",
   },
   {
     icon: CheckCircle,
@@ -336,94 +288,29 @@ function WhyTrustUs() {
   );
 }
 
-/* ─── Main page ──────────────────────────────────────────────── */
+/* ─── Page ───────────────────────────────────────────────────── */
 
-function HomeContent() {
-  const searchParams = useSearchParams();
-  const category = searchParams.get("category");
-  const [featuredPost, setFeaturedPost] = useState<Post | null>(null);
-  const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [topPickPosts, setTopPickPosts] = useState<Post[]>([]);
-  const [pillarPosts, setPillarPosts] = useState<Post[]>([]);
-
-  useEffect(() => {
-    getFeaturedPost()
-      .then((post) => setFeaturedPost(post))
-      .catch(() => {})
-      .finally(() => setFeaturedLoading(false));
-  }, []);
-
-  useEffect(() => {
-    getHomepageConfig().then(async (config) => {
-      const [picks, pillars] = await Promise.all([
-        getPostsByIds(config.topPicks),
-        getPostsByIds(config.pillars),
-      ]);
-      setTopPickPosts(picks);
-      setPillarPosts(pillars);
-    }).catch(() => {});
-  }, []);
-
-  const activeCategory = category ?? "All";
-  const gridCategory =
-    category && category !== "All"
-      ? (GROUP_CATEGORY_MAP[category as CategoryGroup] ?? (category as PostCategory))
-      : undefined;
+export default async function HomePage() {
+  const featuredPost = await fetchFeaturedPost();
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* 1. Hero — renders heading/CTA immediately, featured card fades in */}
-      <HeroSection featuredPost={featuredPost} featuredLoading={featuredLoading} />
+      {/* H1 headline + featured post card — fully server-rendered */}
+      <HeroSection featuredPost={featuredPost} />
 
-      {/* 2. Cited-By strip */}
+      {/* Trust strip — static, server-rendered */}
       <CitedByStrip />
 
-      {/* 3. Top Picks (admin-managed) */}
-      <TopPicks posts={topPickPosts} />
+      {/* Dynamic: TopPicks, PostGrid, PillarGrid — client islands */}
+      <HomeClient excludeSlug={featuredPost?.slug} />
 
-      {/* 4. Latest Reviews */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2
-              className="text-2xl sm:text-3xl font-bold text-foreground"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              {activeCategory === "All" ? "Latest Reviews" : activeCategory}
-            </h2>
-          </div>
-          <CategoryFilter activeCategory={activeCategory} />
-        </div>
-        <PostGrid
-          category={gridCategory}
-          excludeSlug={featuredPost?.slug}
-          pageSize={9}
-        />
-      </section>
-
-      {/* 5. Pillar Grid (admin-managed) */}
-      <PillarGrid posts={pillarPosts} />
-
-      {/* 6. Newsletter Signup */}
+      {/* Static footer sections — server-rendered */}
       <NewsletterSignup />
-
-      {/* 7. About Strip */}
       <AboutStrip />
-
-      {/* 8. Why Trust Us */}
       <WhyTrustUs />
-
       <Footer />
     </div>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <Suspense>
-      <HomeContent />
-    </Suspense>
   );
 }

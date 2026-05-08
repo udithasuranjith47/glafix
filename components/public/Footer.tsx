@@ -32,9 +32,9 @@ export function Footer() {
 
           {/* Reviews */}
           <div>
-            <h4 className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
               Categories
-            </h4>
+            </p>
             <ul className="space-y-2.5">
               {[
                 { label: "Reviews",        href: "/category/Reviews" },
@@ -57,9 +57,9 @@ export function Footer() {
 
           {/* Site */}
           <div>
-            <h4 className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-foreground mb-4 uppercase tracking-wider">
               Site
-            </h4>
+            </p>
             <ul className="space-y-2.5">
               {[
                 { label: "AI Stack 2026", href: "/best-ai-tools-2026" },

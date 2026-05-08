@@ -21,6 +21,7 @@ export function PostGrid({ category, excludeSlug, pageSize = 9 }: PostGridProps)
   const [loadingMore, setLoadingMore] = useState(false);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPosts = useCallback(
     async (reset = false) => {
@@ -63,8 +64,10 @@ export function PostGrid({ category, excludeSlug, pageSize = 9 }: PostGridProps)
         setPosts(filtered);
         setLastDoc(newLastDoc);
         setHasMore(newPosts.length === pageSize);
+        setError(null);
       } catch (err) {
         console.error("Failed to fetch posts:", err);
+        setError(err instanceof Error ? err.message : "Failed to load posts. Check Firestore indexes.");
       } finally {
         setLoading(false);
       }
@@ -81,12 +84,28 @@ export function PostGrid({ category, excludeSlug, pageSize = 9 }: PostGridProps)
 
   if (loading) return <PostGridSkeleton count={pageSize} />;
 
+  if (error) {
+    return (
+      <div className="text-center py-16 rounded-xl border border-destructive/20 bg-destructive/5 p-8">
+        <p className="text-destructive font-semibold mb-2">Could not load posts</p>
+        <p className="text-muted-foreground text-xs leading-relaxed max-w-lg mx-auto">{error}</p>
+        <p className="text-muted-foreground text-xs mt-3">
+          If this is a new project, run{" "}
+          <code className="bg-muted px-1.5 py-0.5 rounded text-primary">
+            firebase deploy --only firestore:indexes
+          </code>{" "}
+          to create required database indexes.
+        </p>
+      </div>
+    );
+  }
+
   if (posts.length === 0) {
     return (
       <div className="text-center py-16">
         <p className="text-muted-foreground text-lg">No posts found.</p>
         <p className="text-muted-foreground text-sm mt-2">
-          {category ? `No ${category} posts published yet.` : "Check back soon."}
+          {category ? `No posts in this category yet.` : "Check back soon."}
         </p>
       </div>
     );
