@@ -9,6 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAiStack, setAiStack, AiStackEntry } from "@/lib/firestore";
 
+const AUDIENCE_OPTIONS = [
+  "Small Business",
+  "Student",
+  "Freelancer",
+  "Content Creator",
+  "Solopreneur",
+  "Agency / Team",
+  "Developer",
+];
+
 const EMPTY_ENTRY: Omit<AiStackEntry, "id"> = {
   rank: 1,
   category: "",
@@ -18,6 +28,7 @@ const EMPTY_ENTRY: Omit<AiStackEntry, "id"> = {
   pros: ["", "", ""],
   href: "/best-ai-tools-2026",
   score: 9.0,
+  audiences: [],
 };
 
 function newEntry(rank: number): AiStackEntry {
@@ -270,6 +281,32 @@ function EntryForm({
       <div className="space-y-1.5">
         <Label className="text-xs">&ldquo;Full Comparison&rdquo; Link</Label>
         <Input value={draft.href} onChange={(e) => set("href", e.target.value)} placeholder="/category/Reviews" className="bg-muted/20 border-border text-sm font-mono" />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Who is this for? <span className="text-muted-foreground/60 font-normal">(leave empty = shown for everyone)</span></Label>
+        <div className="flex flex-wrap gap-2">
+          {AUDIENCE_OPTIONS.map((a) => {
+            const checked = (draft.audiences ?? []).includes(a);
+            return (
+              <button
+                key={a}
+                type="button"
+                onClick={() => {
+                  const current = draft.audiences ?? [];
+                  set("audiences", checked ? current.filter((x) => x !== a) : [...current, a]);
+                }}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                  checked
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/10 text-muted-foreground hover:border-border/80 hover:text-foreground"
+                }`}
+              >
+                {a}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex gap-2 pt-1">

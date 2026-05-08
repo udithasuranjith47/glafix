@@ -293,6 +293,7 @@ export interface AiStackEntry {
   pros: string[];
   href: string;
   score: number;
+  audiences: string[]; // empty = shown for all personas
 }
 
 export async function getAiStack(): Promise<AiStackEntry[]> {
