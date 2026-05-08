@@ -128,7 +128,7 @@ export default async function CategoryPage({ params }: Props) {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="pt-32 pb-12 animate-fade-in-up">
+        <div className="pt-32 lg:pt-40 pb-12 animate-fade-in-up">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-6"

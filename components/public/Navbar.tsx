@@ -6,11 +6,12 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SearchBar } from "@/components/public/SearchBar";
 
-const navLinks = [
-  { label: "AI Stack 2026", href: "/best-ai-tools-2026", highlight: true },
-  { label: "Reviews",  href: "/category/Reviews" },
-  { label: "How-To",   href: "/category/How-To" },
-  { label: "Roundups", href: "/category/Roundups" },
+const categoryLinks = [
+  { label: "Reviews",        href: "/category/Reviews" },
+  { label: "Roundups",       href: "/category/Roundups" },
+  { label: "How-To",         href: "/category/How-To" },
+  { label: "Pricing & News", href: "/category/Pricing%20%26%20News" },
+  { label: "Case Studies",   href: "/category/Case%20Studies" },
 ];
 
 export function Navbar() {
@@ -32,51 +33,61 @@ export function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ── Desktop row ────────────────────────────────────── */}
-        <div className="hidden lg:flex items-center gap-6 h-20">
-          {/* Logo */}
+
+        {/* ── Desktop: top row — Logo + Search + CTA ──────────── */}
+        <div className="hidden lg:flex items-center gap-6 h-16">
           <Link href="/" className="flex items-center group shrink-0">
             <Logo size={22} textOnly className="group-hover:opacity-80 transition-opacity" />
           </Link>
 
-          {/* Search bar — centered, takes remaining space */}
           <div className="flex-1 flex justify-center">
             <SearchBar className="w-full max-w-md" />
           </div>
 
-          {/* Nav links */}
-          <nav className="flex items-center gap-6 shrink-0">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={
-                  link.highlight
-                    ? "text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-                    : "text-sm text-muted-foreground hover:text-primary transition-colors"
-                }
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <Link
+            href="/best-ai-tools-2026"
+            className="shrink-0 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+          >
+            AI Stack 2026
+          </Link>
         </div>
 
-        {/* ── Mobile row ──────────────────────────────────────── */}
-        <div className="lg:hidden flex items-center justify-between h-16">
+        {/* ── Desktop: category row ────────────────────────────── */}
+        <div className="hidden lg:flex items-center gap-7 h-10 border-t border-border/40">
+          {categoryLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* ── Mobile: top row ─────────────────────────────────── */}
+        <div className="lg:hidden flex items-center justify-between h-14">
           <Link href="/" className="flex items-center">
             <Logo size={18} textOnly />
           </Link>
-          <button
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/best-ai-tools-2026"
+              className="text-xs font-semibold text-primary"
+            >
+              AI Stack 2026
+            </Link>
+            <button
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile search bar — always visible below the logo row */}
+        {/* Mobile search bar */}
         <div className="lg:hidden pb-3">
           <SearchBar className="w-full" />
         </div>
@@ -85,16 +96,12 @@ export function Navbar() {
       {/* Mobile nav menu */}
       {menuOpen && (
         <div className="lg:hidden bg-card border-b border-border">
-          <nav className="flex flex-col px-4 py-4 gap-4">
-            {navLinks.map((link) => (
+          <nav className="flex flex-col px-4 py-4 gap-3">
+            {categoryLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={
-                  link.highlight
-                    ? "text-sm font-semibold text-primary"
-                    : "text-sm text-muted-foreground hover:text-primary transition-colors"
-                }
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
